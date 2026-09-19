@@ -9,9 +9,9 @@ Kullanım: <https://wokwi.com> üzerinde yeni bir "ESP32" projesi açıp
 `diagram.json` içeriğini yapıştırın veya VS Code Wokwi eklentisiyle bu klasörü
 açın (eklenti lisans koşullarını kullanmadan önce kontrol edin).
 
-> **Durum:** Bu klasörde henüz ESP32 firmware'i yoktur; yalnızca devre ve
-> bağlantı dokümantasyonu vardır. Aynı C çekirdeği (`../core/`) için ESP32 HAL
-> katmanı sonraki adımdır.
+> **Durum:** Bu devre için ESP32 firmware'i `../esp32/` klasöründedir (derlenir,
+> henüz Wokwi'de çalıştırılmadı; ayrıntı için [../esp32/README.md](../esp32/README.md)).
+> `wokwi.toml` derlenmiş firmware'i işaret eder.
 
 ## Parçalar ve GRID UP sensör tipi eşlemesi
 
