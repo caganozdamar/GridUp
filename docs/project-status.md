@@ -22,7 +22,7 @@ amacıdır.
 | Real industrial sensors | NOT YET FIELD VALIDATED | Sensör sınıfları önerilmiştir (bkz. field-module.md), kesin model/vendor seçimi yapılmamıştır |
 | Arc flash detection (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ARC_FLASH`, `ARC_FLASH` anomalisi, skor tabanı (floor), Modbus 41001+ bloğu. Veri kaynağı: `apps/simulator` (`npm run demo:arc`, sentetik) — gerçek optik sensör doğrulanmadı |
 | Partial discharge / acoustic (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ACOUSTIC`, `PARTIAL_DISCHARGE` anomalisi, nem korelasyon bonusu. Akustik seviye (dB) bir **gösterge**dir; gerçek kısmi deşarj ölçümü (UHF/TEV/HFCT) değildir |
-| Field module firmware (C) | CORE ONLY | `firmware/`: platform-bağımsız C çekirdeği ve birim testleri. HAL (ESP32) henüz yazılmadı, bu yüzden hiçbir donanımda çalıştırılamaz |
+| Field module firmware (C, ESP32) | COMPILES, NOT RUN ON TARGET | `firmware/`: C çekirdeği + ESP-IDF HAL (Wi-Fi, HTTP, SNTP, DHT22, ADC). ESP-IDF v5.5.5 ile derlenir; çekirdek mantığı sahte HAL'le birim testli. Karta veya Wokwi'ye yüklenip çalıştırılmadı |
 | Real ADM/GDZ SCADA connection | NOT REQUIRED FOR HACKATHON / FUTURE FIELD PILOT | Gerçek SCADA sistemine bağlanılmadı; sadece Modbus TCP server prototipi çalışıyor |
 | Authentication | NOT IMPLEMENTED | Hackathon kapsamı dışı; production öncesi zorunlu (bkz. on-premise-architecture.md "Production Considerations") |
 | Public cloud / AWS / Azure / Firebase | NOT USED | Sistem tamamen on-premise/Docker Compose ile çalışır |
