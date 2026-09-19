@@ -123,7 +123,7 @@ bkz. aşağıdaki tablo. Detaylı gerekçeler ve production notları için ayrı
 
 ## Genişletilmiş sensörler — ark flaş ve akustik / kısmi deşarj
 
-Backend ve `firmware/` artık iki ek kanalı destekler (simüle edilmiş veriyle):
+Backend ve simülatör (`apps/simulator`) artık iki ek kanalı destekler (simüle edilmiş veriyle):
 
 | Kanal | `SensorType` | Birim | Ne ölçer | Gerçek sensör sınıfı (önerilen, doğrulanmadı) |
 | ----- | ------------ | ----- | -------- | --------------------------------------------- |
@@ -149,8 +149,8 @@ Risk motoru bu iki kanalı diğerlerinden farklı ele alır
 > **Dürüst çerçeve:** Akustik kanal bir **kısmi deşarj göstergesi**dir.
 > Gerçek kısmi deşarj ölçümü (UHF, TEV, HFCT) çok daha özel donanım gerektirir
 > ve bu prototipin kapsamı dışındadır. Ark flaş ve akustik değerler şu an
-> yalnızca `firmware/` içindeki sentetik senaryolardan gelir; gerçek sensörle
-> saha doğrulaması yapılmamıştır.
+> yalnızca simülatörün sentetik senaryosundan gelir (`npm run demo:arc`);
+> gerçek sensörle saha doğrulaması yapılmamıştır.
 
 ## Low-Risk Installation — tasarım prensipleri
 

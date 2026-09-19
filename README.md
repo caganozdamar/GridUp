@@ -72,8 +72,8 @@ Bu bir **npm workspaces monorepo**'dur: `apps/*` ve `packages/*` altındaki her 
 
 ## Features
 
-- Sentetik sensör verisi üretimi (5 senaryo: NORMAL, OVERHEATING,
-  OVERCURRENT, HIGH_HUMIDITY, COMBINED_FAILURE)
+- Sentetik sensör verisi üretimi (6 senaryo: NORMAL, OVERHEATING,
+  OVERCURRENT, HIGH_HUMIDITY, ARC_FLASH, COMBINED_FAILURE)
 - Gerçek zamanlı, ağırlıklı, trend-duyarlı risk skorlama motoru
 - Çoklu-sensör korelasyon bonusları (örn. akım + kablo sıcaklığı birlikte
   yükseliyorsa ek risk puanı)
@@ -96,11 +96,15 @@ veri gönderebilmesine uygun şekilde tasarlanmıştır.
 | `CABLE_TEMPERATURE` | Kritik kablo/bara/terminal yüzey sıcaklığı |
 | `HUMIDITY` | Pano iç ortam nemi |
 | `CURRENT` | Seçilen iletkenin akımı |
+| `ARC_FLASH` | Pano içi optik yoğunluk (%), ani ışık patlaması (simüle) |
+| `ACOUSTIC` | Pano içi ses seviyesi (dB), kısmi deşarj göstergesi (simüle) |
 
-Gelecek genişleme noktaları (`PARTIAL_DISCHARGE`, `ARC_FLASH`, `ACOUSTIC`)
-bugün kod tabanında **implement edilmemiştir** — bkz.
-[docs/field-module.md](docs/field-module.md#future--extended-module--bugün-çalişmiyor)
-ve [docs/project-status.md](docs/project-status.md).
+`ARC_FLASH` ve `ACOUSTIC` kanalları risk motorunda ağırlıklı toplama girmez,
+skora taban (floor) olur: güçlü bir ark flaş tek başına CRITICAL üretir.
+Akustik kanal bir **kısmi deşarj göstergesidir**, gerçek PD ölçümü (UHF/TEV/
+HFCT) değildir; iki kanal da şu an yalnızca simülatörden gelir, gerçek sensörle
+doğrulanmamıştır. Bkz. [docs/field-module.md](docs/field-module.md) ve
+[docs/project-status.md](docs/project-status.md).
 
 ## Risk Engine
 
@@ -271,6 +275,7 @@ npm run dev:all
 ```bash
 npm run demo:normal      # NORMAL, tüm panolar
 npm run demo:critical    # COMBINED_FAILURE, TARGET_PANEL_CODE=PANO-003
+npm run demo:arc         # ARC_FLASH, TARGET_PANEL_CODE=PANO-003 (diğer sensörler normal kalır)
 ```
 
 Bu iki komut `apps/simulator/.env` dosyasını **değiştirmez** — sadece bu
@@ -298,6 +303,7 @@ npm run scada:read -- PANO-003
 | `npm run dev:simulator`     | Simülatörü başlatır (`.env`'deki senaryoyla)            |
 | `npm run demo:normal`       | Simülatörü NORMAL senaryoyla başlatır (`.env`'i değiştirmez) |
 | `npm run demo:critical`     | Simülatörü COMBINED_FAILURE + PANO-003 ile başlatır (`.env`'i değiştirmez) |
+| `npm run demo:arc`          | Simülatörü ARC_FLASH + PANO-003 ile başlatır (`.env`'i değiştirmez) |
 | `npm run dev:scada`         | SCADA Gateway'i (Modbus TCP server) başlatır            |
 | `npm run scada:read -- <PANO-KOD>` | Modbus TCP test client'ı ile bir panonun register'larını okur |
 | `npm run dev:all`           | API + Web + Simulator'ı tek terminalde paralel başlatır |
