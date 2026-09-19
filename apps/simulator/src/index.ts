@@ -7,7 +7,9 @@ import { nextPanelState, randomInitialState } from './sensor-generator.js';
 import { SimulationScenario } from './scenario.js';
 import type { BatchReadingInput, DiscoveredPanel, PanelSensorState } from './types.js';
 
-const SENSOR_TYPE_TO_STATE_KEY: Record<SensorType, keyof PanelSensorState> = {
+// Simulator sadece ilk dort sensor tipini uretir; ARC_FLASH/ACOUSTIC gibi
+// diger tipler (bkz. firmware/) icin okuma GONDERILMEZ.
+const SENSOR_TYPE_TO_STATE_KEY: Partial<Record<SensorType, keyof PanelSensorState>> = {
   [SensorType.AMBIENT_TEMPERATURE]: 'ambientTemperature',
   [SensorType.CABLE_TEMPERATURE]: 'cableTemperature',
   [SensorType.HUMIDITY]: 'humidity',
@@ -63,6 +65,7 @@ function buildReadings(
     for (const [type, sensor] of Object.entries(panel.sensorsByType)) {
       if (!sensor) continue;
       const stateKey = SENSOR_TYPE_TO_STATE_KEY[type as SensorType];
+      if (!stateKey) continue;
       readings.push({ sensorId: sensor.id, value: nextState[stateKey], timestamp });
     }
   }

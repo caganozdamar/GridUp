@@ -187,3 +187,78 @@ describe('computeRiskExplanation', () => {
     expect(result.reasons).toContain('All monitored sensors are within normal operating range');
   });
 });
+
+describe('arc flash and acoustic (partial discharge) scoring', () => {
+  const withDischarge = (arcMax: number, acousticMax: number) =>
+    computeRiskExplanation({
+      ...NORMAL_STATS,
+      [SensorType.ARC_FLASH]: stats({ latest: 0, maximum: arcMax }),
+      [SensorType.ACOUSTIC]: stats({ latest: 40, maximum: acousticMax }),
+    });
+
+  it('leaves the score unchanged when arc flash / acoustic readings are normal', () => {
+    const baseline = computeRiskExplanation(NORMAL_STATS);
+    const quiet = withDischarge(1, 40);
+    expect(quiet.score).toBe(baseline.score);
+    expect(quiet.level).toBe(RiskLevel.NORMAL);
+    expect(quiet.components.arcFlash).toBe(0);
+    expect(quiet.components.acoustic).toBe(0);
+    expect(quiet.flags.arcFlash).toBe(false);
+    expect(quiet.flags.partialDischarge).toBe(false);
+  });
+
+  it('drives the score to CRITICAL on a strong arc flash even when every other sensor is normal', () => {
+    const result = withDischarge(80, 40);
+    expect(result.score).toBeGreaterThanOrEqual(80);
+    expect(result.level).toBe(RiskLevel.CRITICAL);
+    expect(result.flags.arcFlash).toBe(true);
+    expect(result.reasons[0]).toContain('Arc flash detected');
+  });
+
+  it('uses the window peak, so a brief flash stays visible after the latest reading is back to 0', () => {
+    const result = computeRiskExplanation({
+      ...NORMAL_STATS,
+      [SensorType.ARC_FLASH]: stats({ latest: 0, maximum: 90 }),
+    });
+    expect(result.level).toBe(RiskLevel.CRITICAL);
+  });
+
+  it('flags a possible arc flash at a moderate optical level without reaching CRITICAL', () => {
+    const result = withDischarge(10, 40);
+    expect(result.flags.arcFlash).toBe(true);
+    expect(result.level).not.toBe(RiskLevel.CRITICAL);
+    expect(result.reasons[0]).toContain('Possible arc flash');
+  });
+
+  it('caps acoustic-only activity below CRITICAL (a loud noise alone is not proof of an arc)', () => {
+    const result = withDischarge(0, 100);
+    expect(result.components.acoustic).toBe(100);
+    expect(result.flags.partialDischarge).toBe(true);
+    expect(result.level).toBe(RiskLevel.HIGH);
+    expect(result.reasons).toContain('Strong acoustic activity: partial discharge likely');
+  });
+
+  it('adds a correlation bonus when acoustic activity coincides with high humidity', () => {
+    const dry = computeRiskExplanation({
+      ...NORMAL_STATS,
+      [SensorType.ACOUSTIC]: stats({ latest: 58, maximum: 58 }),
+    });
+    const humid = computeRiskExplanation({
+      ...NORMAL_STATS,
+      [SensorType.HUMIDITY]: stats({ latest: 72 }),
+      [SensorType.ACOUSTIC]: stats({ latest: 58, maximum: 58 }),
+    });
+    expect(humid.flags.multiSensorRisk).toBe(true);
+    expect(humid.reasons.some((r) => r.includes('humid conditions'))).toBe(true);
+    expect(humid.score).toBeGreaterThan(dry.score);
+  });
+
+  it('keeps the score within 0-100 for extreme arc flash / acoustic values', () => {
+    for (const v of [-1000, 0, 1000, 1e9]) {
+      const result = withDischarge(v, v);
+      expect(result.score).toBeGreaterThanOrEqual(0);
+      expect(result.score).toBeLessThanOrEqual(100);
+    }
+  });
+});
+

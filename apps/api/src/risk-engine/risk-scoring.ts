@@ -1,11 +1,14 @@
 import { getRiskLevel, RiskLevel, SensorType, type RiskComponents } from '@grid-up/shared';
 import {
+  ACOUSTIC_ANCHORS,
   ANOMALY_THRESHOLDS,
+  ARC_FLASH_ANCHORS,
   CABLE_TEMPERATURE_ANCHORS,
   CABLE_TEMPERATURE_TREND_ANCHORS,
   CORRELATION_BONUSES,
   CURRENT_ANCHORS,
   CURRENT_TREND_ANCHORS,
+  DISCHARGE_FLOORS,
   HUMIDITY_ANCHORS,
   HUMIDITY_TREND_ANCHORS,
   RISK_WEIGHTS,
@@ -18,6 +21,8 @@ export interface RiskFlags {
   overcurrent: boolean;
   highHumidity: boolean;
   multiSensorRisk: boolean;
+  arcFlash: boolean;
+  partialDischarge: boolean;
 }
 
 export interface RiskExplanationResult {
@@ -40,6 +45,8 @@ export function computeRiskExplanation(
   const cableStats = statsByType[SensorType.CABLE_TEMPERATURE];
   const currentStats = statsByType[SensorType.CURRENT];
   const humidityStats = statsByType[SensorType.HUMIDITY];
+  const arcStats = statsByType[SensorType.ARC_FLASH];
+  const acousticStats = statsByType[SensorType.ACOUSTIC];
 
   const temperatureRisk = cableStats ? piecewiseLinearScore(cableStats.latest, CABLE_TEMPERATURE_ANCHORS) : 0;
   const currentRisk = currentStats ? piecewiseLinearScore(currentStats.latest, CURRENT_ANCHORS) : 0;
@@ -54,6 +61,11 @@ export function computeRiskExplanation(
   const humidityTrendRisk = humidityStats
     ? piecewiseLinearScore(Math.max(0, humidityStats.trendPerMinute), HUMIDITY_TREND_ANCHORS)
     : 0;
+
+  // Ark flash / akustik: anlik olaylar oldugu icin son deger degil pencere
+  // ZIRVESI (maximum) degerlendirilir.
+  const arcFlashRisk = arcStats ? piecewiseLinearScore(arcStats.maximum, ARC_FLASH_ANCHORS) : 0;
+  const acousticRisk = acousticStats ? piecewiseLinearScore(acousticStats.maximum, ACOUSTIC_ANCHORS) : 0;
 
   // trendRisk: "herhangi bir sensor kritik limite hizla yaklasiyor mu?" sorusuna
   // cevap oldugu icin en hizli yukselen sensorun skoru alinir (ortalama degil).
@@ -78,13 +90,29 @@ export function computeRiskExplanation(
     reasons.push('High humidity combined with elevated cable temperature increases insulation risk');
   }
 
+  const acousticHumidityCfg = CORRELATION_BONUSES.acousticAndHumidity;
+  const acousticHumidityTriggered =
+    acousticRisk >= acousticHumidityCfg.minAcousticRisk && humidityRisk >= acousticHumidityCfg.minHumidityRisk;
+  if (acousticHumidityTriggered) {
+    // Bonus agirlikli toplama degil akustik tabana eklenir (asagida); aksi halde
+    // taban baskin oldugunda bu korelasyon skoru hic etkilemezdi.
+    reasons.push('Acoustic activity in humid conditions increases partial discharge risk');
+  }
+
   const weightedScore =
     temperatureRisk * RISK_WEIGHTS.temperature +
     currentRisk * RISK_WEIGHTS.current +
     humidityRisk * RISK_WEIGHTS.humidity +
     trendRisk * RISK_WEIGHTS.trend;
 
-  const score = Math.round(clamp(weightedScore + bonus, 0, 100));
+  // Ark flash / akustik taban degerleri: agirlikli toplam ne olursa olsun skor
+  // en az bu kadar olur (bkz. DISCHARGE_FLOORS).
+  const dischargeFloor = Math.max(
+    arcFlashRisk * DISCHARGE_FLOORS.arcFlash,
+    acousticRisk * DISCHARGE_FLOORS.acoustic + (acousticHumidityTriggered ? acousticHumidityCfg.bonus : 0),
+  );
+
+  const score = Math.round(clamp(Math.max(weightedScore + bonus, dischargeFloor), 0, 100));
   const level = getRiskLevel(score);
 
   if (temperatureRisk >= 80) reasons.unshift('Cable temperature is at a critical level');
@@ -102,6 +130,13 @@ export function computeRiskExplanation(
   else if (humidityRisk >= 45) reasons.push('High humidity detected');
   else if (humidityRisk >= 15) reasons.push('Humidity is slightly elevated');
 
+  if (acousticRisk >= 65) reasons.push('Strong acoustic activity: partial discharge likely');
+  else if (acousticRisk >= 30) reasons.push('Abnormal acoustic activity (possible partial discharge)');
+
+  // Ark flash en onemli neden: alarm mesajinda (reasons[0]) ilk sirada gorunur.
+  if (arcFlashRisk >= 80) reasons.unshift('Arc flash detected: intense optical event inside the panel');
+  else if (arcFlashRisk >= 40) reasons.unshift('Possible arc flash: optical intensity spike inside the panel');
+
   if (reasons.length === 0) reasons.push('All monitored sensors are within normal operating range');
 
   return {
@@ -112,6 +147,8 @@ export function computeRiskExplanation(
       current: Math.round(currentRisk),
       humidity: Math.round(humidityRisk),
       trend: Math.round(trendRisk),
+      arcFlash: Math.round(arcFlashRisk),
+      acoustic: Math.round(acousticRisk),
     },
     reasons,
     flags: {
@@ -119,7 +156,9 @@ export function computeRiskExplanation(
       temperatureRise: cableTrendRisk >= ANOMALY_THRESHOLDS.temperatureRise,
       overcurrent: currentRisk >= ANOMALY_THRESHOLDS.overcurrent,
       highHumidity: humidityRisk >= ANOMALY_THRESHOLDS.highHumidity,
-      multiSensorRisk: currentCableTriggered || humidityCableTriggered,
+      multiSensorRisk: currentCableTriggered || humidityCableTriggered || acousticHumidityTriggered,
+      arcFlash: arcFlashRisk >= ANOMALY_THRESHOLDS.arcFlash,
+      partialDischarge: acousticRisk >= ANOMALY_THRESHOLDS.partialDischarge,
     },
   };
 }
