@@ -1,0 +1,116 @@
+# On-premise deployment stack for GRID UP (Asama 7).
+#
+# Bu dosya, gunluk `npm run dev:*` gelistirme is akisini DEGISTIRMEZ; ayri,
+# opsiyonel bir "production-like on-prem" compose'dur. Tum servisler tek bir
+# private Docker network uzerinde calisir; hicbir servis public cloud'a
+# bagimli degildir (bkz. docs/on-premise-architecture.md).
+#
+# Kullanim:
+#   docker compose -f docker-compose.onprem.yml up -d --build
+#   docker compose -f docker-compose.onprem.yml down
+#
+# Not: PostgreSQL bu stack'te host'a expose edilmez (sadece private network
+# icinde erisilebilir); gelistirme ortamindaki docker-compose.yml (host
+# portu 55432) ile CAKISMAZ ve birbirinden bagimsiz calisabilirler.
+#
+# ONEMLI: `name:` (proje adi) burada BILEREK acikca "grid-up-onprem" olarak
+# sabitlenmistir ve postgres servisinin key'i de BILEREK "onprem-postgres"
+# (sade "postgres" DEGIL). Aksi halde, bu dosya docker-compose.yml ile ayni
+# dizinden calistirildiginda ikisi de ayni ORTUK proje adini ("hackaton",
+# dizin adindan turetilir) ve ayni "postgres" servis anahtarini paylasirsa,
+# Docker Compose bu ikisini AYNI servis sanip gelistirme ortamindaki
+# `grid-up-postgres` container'ini bu stack'in tanimiyla RECREATE eder
+# (container silinir, farkli bir volume'e baglanir) - gelistirme
+# ortamindaki container port 55432'yi kaybeder. (Bu, bu dosya ilk
+# yazilirken gercekten yasandi ve `docker compose -f docker-compose.yml up
+# -d postgres` ile geri alindi; veri, ayri named volume sayesinde
+# kaybolmadi.) Asagidaki `name:` + farkli servis anahtari + farkli
+# container_name + farkli volume adi bu riski ortadan kaldirir.
+name: grid-up-onprem
+
+services:
+  onprem-postgres:
+    image: postgres:16-alpine
+    container_name: grid-up-onprem-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-grid_up}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-grid_up}
+      POSTGRES_DB: ${POSTGRES_DB:-grid_up}
+    volumes:
+      - onprem_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-grid_up}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - grid-up-onprem
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: grid-up-onprem-api
+    restart: unless-stopped
+    depends_on:
+      onprem-postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-grid_up}:${POSTGRES_PASSWORD:-grid_up}@onprem-postgres:5432/${POSTGRES_DB:-grid_up}?schema=public
+      API_PORT: 3000
+      NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-demo}
+      SMS_RECIPIENT: ${SMS_RECIPIENT:-Operations Team}
+      WHATSAPP_RECIPIENT: ${WHATSAPP_RECIPIENT:-Operations Team}
+    ports:
+      # Sadece IT/OT private network icindeki diger makinelerden erisim
+      # gerekiyorsa disari acilir; internet'e expose edilmemelidir.
+      - '3000:3000'
+    networks:
+      - grid-up-onprem
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        # Private network icinde API'nin adresi (tarayicidan erisim host
+        # uzerinden oldugu icin host/OT-network adresi kullanilir).
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+    container_name: grid-up-onprem-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '8080:80'
+    networks:
+      - grid-up-onprem
+
+  scada-gateway:
+    build:
+      context: .
+      dockerfile: apps/scada-gateway/Dockerfile
+    container_name: grid-up-onprem-scada-gateway
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      API_BASE_URL: http://api:3000
+      MODBUS_TCP_PORT: ${MODBUS_TCP_PORT:-1502}
+      SCADA_REFRESH_INTERVAL_MS: ${SCADA_REFRESH_INTERVAL_MS:-2000}
+      SCADA_DATA_STALE_MS: ${SCADA_DATA_STALE_MS:-10000}
+    ports:
+      # OT/SCADA private network'undeki SCADA yazilimi/PLC'lerin erisebilmesi
+      # icin acilir. Production'da bu port sadece trusted OT network'e
+      # (firewall allow-list ile) acilmalidir, internet'e ASLA expose
+      # edilmemelidir (bkz. docs/on-premise-architecture.md #production-considerations).
+      - '${MODBUS_TCP_PORT:-1502}:${MODBUS_TCP_PORT:-1502}'
+    networks:
+      - grid-up-onprem
+
+networks:
+  grid-up-onprem:
+    driver: bridge
+
+volumes:
+  onprem_postgres_data:

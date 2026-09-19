@@ -1,0 +1,44 @@
+{
+  "name": "grid-up-anomaly-detection",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Pano/Hucre Ici Anomali Erken Uyari Sistemi - ADM/GDZ Grid Up Hackathon",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev --workspace=apps/api",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "dev:simulator": "npm run dev --workspace=apps/simulator",
+    "dev:scada": "npm run dev --workspace=apps/scada-gateway",
+    "dev:all": "concurrently -n api,web,simulator -c blue,green,yellow \"npm:dev:api\" \"npm:dev:web\" \"npm:dev:simulator\"",
+    "scada:read": "npm run scada:read --workspace=apps/scada-gateway --",
+    "demo:normal": "node scripts/demo.mjs NORMAL",
+    "demo:critical": "node scripts/demo.mjs COMBINED_FAILURE PANO-003",
+    "build": "npm run build --workspaces --if-present",
+    "build:shared": "npm run build --workspace=packages/shared",
+    "build:api": "npm run build --workspace=apps/api",
+    "build:web": "npm run build --workspace=apps/web",
+    "build:simulator": "npm run build --workspace=apps/simulator",
+    "build:scada-gateway": "npm run build --workspace=apps/scada-gateway",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "docker:db:up": "docker compose -f docker-compose.yml up -d postgres",
+    "docker:db:down": "docker compose -f docker-compose.yml down",
+    "prisma:generate": "npm run prisma:generate --workspace=apps/api",
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/api"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "allowScripts": {
+    "@prisma/client@6.19.3": true,
+    "@prisma/engines@6.19.3": true,
+    "prisma@6.19.3": true
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
+}

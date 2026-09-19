@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PanelStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+}
+
+// Not: PARTIAL_DISCHARGE, ARC_FLASH, ACOUSTIC gelecekte buraya eklenebilir.
+enum SensorType {
+  AMBIENT_TEMPERATURE
+  CABLE_TEMPERATURE
+  HUMIDITY
+  CURRENT
+}
+
+enum RiskLevel {
+  NORMAL
+  WARNING
+  HIGH
+  CRITICAL
+}
+
+enum AnomalyType {
+  TEMPERATURE_RISE
+  HIGH_TEMPERATURE
+  HIGH_HUMIDITY
+  OVERCURRENT
+  MULTI_SENSOR_RISK
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AlarmStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  RESOLVED
+}
+
+enum NotificationChannel {
+  SMS
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+model Site {
+  id        String   @id @default(uuid())
+  name      String
+  code      String   @unique
+  location  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  panels Panel[]
+
+  @@map("sites")
+}
+
+model Panel {
+  id          String      @id @default(uuid())
+  siteId      String
+  name        String
+  code        String      @unique
+  description String?
+  status      PanelStatus @default(ONLINE)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  site       Site        @relation(fields: [siteId], references: [id], onDelete: Restrict)
+  sensors    Sensor[]
+  riskScores RiskScore[]
+  anomalies  Anomaly[]
+  alarms     Alarm[]
+
+  @@index([siteId])
+  @@map("panels")
+}
+
+model Sensor {
+  id        String     @id @default(uuid())
+  panelId   String
+  name      String
+  code      String     @unique
+  type      SensorType
+  unit      String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  panel    Panel           @relation(fields: [panelId], references: [id], onDelete: Restrict)
+  readings SensorReading[]
+  anomalies Anomaly[]
+
+  @@index([panelId])
+  @@map("sensors")
+}
+
+model SensorReading {
+  id        String   @id @default(uuid())
+  sensorId  String
+  value     Float
+  timestamp DateTime @default(now())
+
+  sensor Sensor @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+
+  @@index([timestamp])
+  @@index([sensorId, timestamp])
+  @@map("sensor_readings")
+}
+
+model RiskScore {
+  id           String    @id @default(uuid())
+  panelId      String
+  score        Int
+  level        RiskLevel
+  calculatedAt DateTime  @default(now())
+
+  panel Panel @relation(fields: [panelId], references: [id], onDelete: Cascade)
+
+  @@index([panelId, calculatedAt])
+  @@map("risk_scores")
+}
+
+model Anomaly {
+  id         String      @id @default(uuid())
+  panelId    String
+  sensorId   String?
+  type       AnomalyType
+  severity   Severity
+  message    String
+  detectedAt DateTime    @default(now())
+  resolvedAt DateTime?
+
+  panel  Panel   @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  sensor Sensor? @relation(fields: [sensorId], references: [id], onDelete: SetNull)
+  alarms Alarm[]
+
+  @@index([panelId, detectedAt])
+  @@index([sensorId])
+  @@map("anomalies")
+}
+
+model Alarm {
+  id             String      @id @default(uuid())
+  panelId        String
+  anomalyId      String?
+  severity       Severity
+  title          String
+  message        String
+  status         AlarmStatus @default(ACTIVE)
+  createdAt      DateTime    @default(now())
+  acknowledgedAt DateTime?
+  resolvedAt     DateTime?
+
+  panel   Panel    @relation(fields: [panelId], references: [id], onDelete: Cascade)
+  anomaly Anomaly? @relation(fields: [anomalyId], references: [id], onDelete: SetNull)
+
+  notifications Notification[]
+
+  @@index([panelId, createdAt])
+  @@index([anomalyId])
+  @@map("alarms")
+}
+
+// Asama 6: alarm -> SMS/WhatsApp bildirim teslimat gecmisi (audit trail).
+model Notification {
+  id                String              @id @default(uuid())
+  alarmId           String
+  channel           NotificationChannel
+  recipient         String
+  message           String
+  status            NotificationStatus  @default(PENDING)
+  provider          String
+  providerMessageId String?
+  errorMessage      String?
+  createdAt         DateTime            @default(now())
+  sentAt            DateTime?
+
+  alarm Alarm @relation(fields: [alarmId], references: [id], onDelete: Cascade)
+
+  // Asama 6 madde 7: ayni alarm + kanal icin duplicate notification olusmasini
+  // DB seviyesinde engeller (uygulama seviyesindeki kontrole ek olarak).
+  @@unique([alarmId, channel])
+  @@index([status])
+  @@index([channel])
+  @@map("notifications")
+}
