@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <math.h>
+
+#include "../core/adc_convert.h"
 #include "../core/buffer.h"
 #include "../core/json_lite.h"
 #include "../core/payload.h"
@@ -137,6 +140,68 @@ static void test_names(void) {
   DONE("names: enum <-> string round trip");
 }
 
+static void test_payload_skips_unreadable_and_unsynced(void) {
+  static tick_buffer_t b;
+  sensor_map_t m;
+  sensor_state_t st = {{0}};
+  char out[1024];
+  provision_parse_sensors(SENSORS, &m);
+  st.v[SENSOR_CABLE_TEMPERATURE] = NAN; /* open-circuit NTC */
+  st.v[SENSOR_CURRENT] = 12.5;
+  buffer_init(&b);
+  buffer_push(&b, "", &st); /* clock not synced */
+  int n = payload_build_batch(&b, &m, out, sizeof out);
+  CHECK(n == 2);                       /* ambient + current; cable (NAN) left out */
+  CHECK(!strstr(out, "\"sensorId\":\"b\"")); /* the NAN channel */
+  CHECK(!strstr(out, "timestamp"));    /* server stamps it */
+  CHECK(!strstr(out, "nan"));
+  DONE("payload: NAN channels skipped, empty timestamp omitted");
+}
+
+static void test_adc_conversions(void) {
+  /* NTC: mid-scale is 25 degC by construction (equal resistances). */
+  CHECK(fabs(adc_to_cable_celsius(2048) - 25.0) < 0.2);
+  CHECK(adc_to_cable_celsius(3000) < 25.0);  /* more counts = colder for this divider */
+  CHECK(adc_to_cable_celsius(1000) > 25.0);
+  CHECK(isnan(adc_to_cable_celsius(0)));     /* shorted / open sensor is not a temperature */
+  CHECK(isnan(adc_to_cable_celsius(ADC_MAX_COUNTS)));
+  CHECK(adc_to_current_amps(0) == 0.0);
+  CHECK(fabs(adc_to_current_amps(ADC_MAX_COUNTS) - 250.0) < 1e-9);
+  CHECK(adc_to_current_amps(-50) == 0.0);    /* clamped */
+  CHECK(adc_to_current_amps(9999) == 250.0);
+  CHECK(fabs(adc_to_arc_percent(2048) - 50.0) < 0.1);
+  CHECK(adc_to_acoustic_db(0) == 30.0);
+  CHECK(fabs(adc_to_acoustic_db(ADC_MAX_COUNTS) - 100.0) < 1e-9);
+  DONE("adc: conversions, clamping and open/short detection");
+}
+
+static void test_synthetic_source(void) {
+  synthetic_source_t src;
+  sensor_state_t a, b;
+  srand(7);
+  synthetic_source_init(&src, SCENARIO_ARC_FLASH);
+  CHECK(synthetic_source_read(&src, &a) == 0);
+  for (int i = 0; i < 8; i++) CHECK(synthetic_source_read(&src, &b) == 0);
+  CHECK(b.v[SENSOR_ARC_FLASH] > a.v[SENSOR_ARC_FLASH]);
+  DONE("synthetic source: initialises lazily and advances the scenario");
+}
+
+static void test_critical_band(void) {
+  sensor_state_t st = {{28, 38, 45, 85, 1, 40}};
+  CHECK(!sensors_in_critical_band(&st));
+  st.v[SENSOR_CABLE_TEMPERATURE] = 80;
+  CHECK(sensors_in_critical_band(&st));
+  st.v[SENSOR_CABLE_TEMPERATURE] = 38;
+  st.v[SENSOR_ARC_FLASH] = 45;
+  CHECK(sensors_in_critical_band(&st));
+  st.v[SENSOR_ARC_FLASH] = 1;
+  st.v[SENSOR_CURRENT] = NAN; /* unreadable channel must not raise the alarm */
+  CHECK(!sensors_in_critical_band(&st));
+  st.v[SENSOR_AMBIENT_TEMPERATURE] = 500; /* ambient is never a fault source */
+  CHECK(!sensors_in_critical_band(&st));
+  DONE("critical band: per-channel limits, NAN ignored, ambient excluded");
+}
+
 int main(void) {
   test_json_ignores_nested_keys();
   test_provision_sensors();
@@ -145,6 +210,10 @@ int main(void) {
   test_full_buffer_fits_api_limit();
   test_scenarios();
   test_names();
+  test_payload_skips_unreadable_and_unsynced();
+  test_adc_conversions();
+  test_synthetic_source();
+  test_critical_band();
   printf("%d test groups passed\n", passed);
   return 0;
 }

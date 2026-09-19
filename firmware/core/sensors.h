@@ -27,6 +27,27 @@ typedef struct {
   double v[SENSOR_KIND_COUNT];
 } sensor_state_t;
 
+/* A sensor source fills one full state per tick. The synthetic source below
+ * drives it from a scenario; a hardware source reads ADC/DHT22. A channel that
+ * cannot be read is set to NAN and is then left out of the batch. Returns 0 on
+ * success, non-zero if the whole tick should be skipped. */
+typedef int (*sensor_read_fn)(void *ctx, sensor_state_t *out);
+
+typedef struct {
+  sensor_state_t state;
+  scenario_t scenario;
+  int initialized;
+} synthetic_source_t;
+
+void synthetic_source_init(synthetic_source_t *src, scenario_t scenario);
+/* sensor_read_fn for synthetic_source_t: advances the scenario one tick. */
+int synthetic_source_read(void *ctx, sensor_state_t *out);
+
+/* Local "critical band" check used for the module's alarm LED. Independent of
+ * the backend's risk score: it only tells a technician standing at the panel
+ * that some channel is in its critical band. NAN channels are ignored. */
+int sensors_in_critical_band(const sensor_state_t *st);
+
 /* Backend enum name for a kind, e.g. "CABLE_TEMPERATURE". */
 const char *sensor_kind_name(sensor_kind_t kind);
 /* Reverse lookup; returns 1 and sets *kind if the name is known. */

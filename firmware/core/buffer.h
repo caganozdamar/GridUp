@@ -7,7 +7,11 @@
 
 #include "sensors.h"
 
-#define BUFFER_CAPACITY 64 /* 64 ticks x 6 sensors = 384 readings < API limit of 500 */
+/* Ticks held while offline. 64 ticks x 6 sensors = 384 readings, under the API's
+ * limit of 500 per batch. Small targets can lower it at build time. */
+#ifndef BUFFER_CAPACITY
+#define BUFFER_CAPACITY 64
+#endif
 
 typedef struct {
   char timestamp[32];

@@ -1,5 +1,6 @@
 #include "sensors.h"
 
+#include <math.h>
 #include <string.h>
 
 #include "hal.h"
@@ -46,7 +47,7 @@ int scenario_from_name(const char *name, scenario_t *s) {
 }
 
 static double clamp(double x, double lo, double hi) { return x < lo ? lo : (x > hi ? hi : x); }
-static double rand_range(double lo, double hi) { return lo + hal_random() * (hi - lo); }
+static double rand_range(double lo, double hi) { return lo + fw_random() * (hi - lo); }
 
 /* Bounded random walk: small noise step, clamped to the normal range. */
 static double walk(double prev, double lo, double hi, double max_step) {
@@ -83,6 +84,39 @@ static faults_t faults_for(scenario_t s) {
     default: break;
   }
   return f;
+}
+
+void synthetic_source_init(synthetic_source_t *src, scenario_t scenario) {
+  src->scenario = scenario;
+  src->initialized = 0;
+}
+
+int synthetic_source_read(void *ctx, sensor_state_t *out) {
+  synthetic_source_t *src = ctx;
+  if (!src->initialized) {
+    sensor_state_init(&src->state);
+    src->initialized = 1;
+  }
+  sensor_state_step(&src->state, src->scenario);
+  *out = src->state;
+  return 0;
+}
+
+/* Critical bands mirror the top of the backend's anchor tables
+ * (apps/api/src/risk-engine/risk-engine.config.ts). */
+int sensors_in_critical_band(const sensor_state_t *st) {
+  static const double LIMIT[SENSOR_KIND_COUNT] = {
+      1e9, /* ambient temperature: not a fault source */
+      75,  /* cable temperature, degC */
+      80,  /* humidity, % */
+      150, /* current, A */
+      30,  /* arc flash, % optical */
+      70,  /* acoustic, dB */
+  };
+  for (int k = 0; k < SENSOR_KIND_COUNT; k++) {
+    if (isfinite(st->v[k]) && st->v[k] >= LIMIT[k]) return 1;
+  }
+  return 0;
 }
 
 void sensor_state_step(sensor_state_t *st, scenario_t scenario) {
