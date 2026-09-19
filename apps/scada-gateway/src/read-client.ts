@@ -7,6 +7,10 @@ import {
   getRegisterStartLabel,
   MODBUS_BOOL,
   MODBUS_DATA_QUALITY,
+  EXTENDED_REGISTERS_PER_PANEL,
+  ExtendedRegisterOffset,
+  getExtendedRegisterStartAddress,
+  getExtendedRegisterStartLabel,
   REGISTERS_PER_PANEL,
   RegisterOffset,
 } from './register-map.js';
@@ -56,6 +60,11 @@ async function main(): Promise<void> {
 
   try {
     const { data } = await client.readHoldingRegisters(startAddress, REGISTERS_PER_PANEL);
+    const { data: extended } = await client.readHoldingRegisters(
+      getExtendedRegisterStartAddress(blockIndex),
+      EXTENDED_REGISTERS_PER_PANEL,
+    );
+    const extendedLabel = getExtendedRegisterStartLabel(blockIndex);
 
     const riskScore = data[RegisterOffset.RISK_SCORE];
     const riskLevel = data[RegisterOffset.RISK_LEVEL];
@@ -87,6 +96,19 @@ async function main(): Promise<void> {
     console.log(`${startLabel + 8} ${pad('Active Anomalies')} : ${anomalyCount}`);
     console.log(
       `${startLabel + 9} ${pad('Data Quality')} : ${dataQuality === MODBUS_DATA_QUALITY.VALID ? 'VALID' : 'INVALID'}`,
+    );
+    console.log('');
+    console.log(
+      `${extendedLabel + 0} ${pad('Arc Flash')} : ${(extended[ExtendedRegisterOffset.ARC_FLASH_X10] / 10).toFixed(1)} %`,
+    );
+    console.log(
+      `${extendedLabel + 1} ${pad('Acoustic')} : ${(extended[ExtendedRegisterOffset.ACOUSTIC_X10] / 10).toFixed(1)} dB`,
+    );
+    console.log(
+      `${extendedLabel + 2} ${pad('Arc Flash Active')} : ${formatBool(extended[ExtendedRegisterOffset.ARC_FLASH_ACTIVE])}`,
+    );
+    console.log(
+      `${extendedLabel + 3} ${pad('Partial Discharge')} : ${formatBool(extended[ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE])}`,
     );
     console.log(separator);
   } finally {

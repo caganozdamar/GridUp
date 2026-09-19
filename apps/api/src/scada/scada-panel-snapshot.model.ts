@@ -15,6 +15,14 @@ export interface ScadaPanelSnapshot {
   cableTemperature: number | null;
   humidity: number | null;
   current: number | null;
+  /** Ark flash optik yogunlugu (%), sensor yoksa null. */
+  arcFlash: number | null;
+  /** Akustik seviye (dB), sensor yoksa null. */
+  acoustic: number | null;
+  /** Aktif (resolve edilmemis) ARC_FLASH anomalisi var mi. */
+  arcFlashActive: boolean;
+  /** Aktif (resolve edilmemis) PARTIAL_DISCHARGE anomalisi var mi. */
+  partialDischargeActive: boolean;
   activeAlarm: boolean;
   activeAnomalyCount: number;
   /** Bu panonun sensorlerinden gelen en guncel reading'in ISO timestamp'i (yoksa null). SCADA Gateway staleness hesabi icin kullanilir. */
