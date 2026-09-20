@@ -135,8 +135,11 @@ Detaylı formül/ağırlıklar için bkz. `apps/api/src/risk-engine/risk-engine.
 ## Dashboard
 
 React + Vite tabanlı, backend'e polling ile bağlanan bir dashboard:
-**Overview**, **Panels**, **Panel Detail** ve **Alarms** sayfaları. Bkz.
-"Demoyu Çalıştırma" bölümü.
+**Overview**, **Panels**, **Panel Detail**, **Alarms** ve **SCADA** sayfaları.
+Ekran görüntüleri ve sayfa açıklamaları: [docs/frontend.md](docs/frontend.md).
+Bkz. "Demoyu Çalıştırma" bölümü.
+
+![Overview](docs/assets/screens/01-overview.png)
 
 ## Bildirimler
 
@@ -448,6 +451,9 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |
 | [docs/scalability.md](docs/scalability.md) | 100 panel ölçek testi ve mimarisi |
+| [docs/resource-usage.md](docs/resource-usage.md) | Kaynak kullanımı ölçümü, depolama projeksiyonu, ESP32 ayak izi |
+| [docs/frontend.md](docs/frontend.md) | Frontend sayfaları ve ekran görüntüleri |
+| [docs/demo-rehearsal.md](docs/demo-rehearsal.md) | Demo provası sonuçları ve bulunan sorunlar |
 | [firmware/esp32/README.md](firmware/esp32/README.md) | ESP32 firmware'i: derleme ve doğrulama durumu |
 | [firmware/wokwi/README.md](firmware/wokwi/README.md) | Wokwi devresi, pin tablosu ve ADC dönüşümleri |
 | [docs/demo-script.md](docs/demo-script.md) | Jüri demo akışı |
