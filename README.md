@@ -219,6 +219,8 @@ BOM ve 1600 kVA AG panel deployment konsepti dahil:
 | [docs/field-module.md](docs/field-module.md) | Genel konsept, sensör yaklaşımı, future extensions |
 | [docs/field-data-contract.md](docs/field-data-contract.md) | Field → GRID UP veri sözleşmesi |
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
+| [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
+| [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |
@@ -349,6 +351,8 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/field-module.md](docs/field-module.md) | Field Module konsepti |
 | [docs/field-data-contract.md](docs/field-data-contract.md) | Field veri sözleşmesi |
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
+| [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
+| [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |
