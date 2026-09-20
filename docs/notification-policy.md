@@ -123,6 +123,12 @@ gateway / zaman aşımı), `MOCK_GATEWAY_TOKEN` (yetkilendirme).
   çalışılır, ama ani kesintide kayıp mümkündür).
 - **Kanal yedeği (fallback) yok.** SMS başarısız olursa otomatik WhatsApp'a
   geçilmez; her kanal bağımsızdır. İki kanal zaten CRITICAL'da birlikte gider.
+- **Alarm dalgalanması (flapping) bildirim fırtınası yaratabilir.** Alarm,
+  risk eşiği civarında gidip gelirse (gürültü ya da aynı panoya birden fazla
+  veri kaynağı yazması) her yeni alarm yeni bildirim gönderir. Eşik histerezisi
+  ve pano başına bildirim bekleme süresi (cooldown) yoktur. Bunun gözlendiği
+  durum ve önlem önerisi için bkz.
+  [installation-and-failure-analysis.md](installation-and-failure-analysis.md).
 - **Yükseltme (escalation) yok.** Alarm onaylanmazsa üst kademeye otomatik
   bildirim gitmez. Alarmı onaylamak mümkündür (`PATCH /alarms/:id/acknowledge`,
   dashboard'daki Alarms sayfasında **Acknowledge** butonu); onaylanan alarm açık

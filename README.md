@@ -252,6 +252,8 @@ BOM ve 1600 kVA AG panel deployment konsepti dahil:
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
 | [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
 | [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
+| [docs/field-conditions.md](docs/field-conditions.md) | Sıcaklık, manyetik alan ve çevre etkileri (tasarım yaklaşımı) |
+| [docs/installation-and-failure-analysis.md](docs/installation-and-failure-analysis.md) | Kurulum yaklaşımı ve arıza modları analizi (FMEA) |
 | [docs/notification-policy.md](docs/notification-policy.md) | Bildirim politikası ve SMS/WhatsApp gateway entegrasyonu |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
