@@ -1,4 +1,12 @@
-import type { Anomaly, PanelDetail, PanelRiskResponse, PanelSummary, Sensor, SensorReading } from '@grid-up/shared';
+import type {
+  Anomaly,
+  PanelDetail,
+  PanelRiskResponse,
+  PanelSummary,
+  PanelTimelineResponse,
+  Sensor,
+  SensorReading,
+} from '@grid-up/shared';
 import { apiGet } from './client';
 
 export const panelsApi = {
@@ -15,4 +23,7 @@ export const panelsApi = {
 
   anomalies: (id: string, resolved?: boolean) =>
     apiGet<Anomaly[]>(`/panels/${id}/anomalies`, resolved === undefined ? {} : { resolved: String(resolved) }),
+
+  // Asama 9 madde 15-19: Panel Event Timeline.
+  timeline: (id: string, limit?: number) => apiGet<PanelTimelineResponse>(`/panels/${id}/timeline`, { limit }),
 };

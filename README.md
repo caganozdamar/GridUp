@@ -93,6 +93,10 @@ Bu bir **npm workspaces monorepo**'dur: `apps/*` ve `packages/*` altındaki her 
 - Read-only SCADA/Modbus TCP gateway (mevcut SCADA'yı değiştirmeden entegrasyon)
 - Public cloud kullanmayan, Docker Compose ile doğrulanmış on-premise dağıtım
 - 100 panel / 400 sensör ölçeğinde ölçülmüş prototip benchmark'ı
+- Decision support / early warning intelligence (Aşama 9): trend-based
+  Critical Threshold Estimate, deterministic Recommended Actions, Sensor/Panel
+  Data Health, Panel Event Timeline, Operational Metrics — bkz.
+  [docs/decision-support.md](docs/decision-support.md)
 
 ## Mevcut Sensörler
 
@@ -431,5 +435,6 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [firmware/wokwi/README.md](firmware/wokwi/README.md) | Wokwi devresi, pin tablosu ve ADC dönüşümleri |
 | [docs/demo-script.md](docs/demo-script.md) | Jüri demo akışı |
 | [docs/demo-checklist.md](docs/demo-checklist.md) | Demo öncesi kontrol listesi ve acil durum planı |
+| [docs/decision-support.md](docs/decision-support.md) | Aşama 9: Time-to-Critical, Recommended Actions, Data Health, Timeline, Metrics |
 | [docs/project-status.md](docs/project-status.md) | Uygulanan ve gelecek özellikler matrisi |
 | [docs/code-freeze.md](docs/code-freeze.md) | Son doğrulama sonuçları, bilinen sınırlar |

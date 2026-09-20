@@ -12,6 +12,7 @@ import { AnomaliesModule } from './anomalies/anomalies.module.js';
 import { AlarmsModule } from './alarms/alarms.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ScadaModule } from './scada/scada.module.js';
+import { DecisionSupportModule } from './decision-support/decision-support.module.js';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { ScadaModule } from './scada/scada.module.js';
     AlarmsModule,
     NotificationsModule,
     ScadaModule,
+    DecisionSupportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

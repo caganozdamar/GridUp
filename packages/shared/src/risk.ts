@@ -1,3 +1,5 @@
+import type { TrendEstimate, RecommendedAction } from './decision-support';
+
 export enum RiskLevel {
   NORMAL = 'NORMAL',
   WARNING = 'WARNING',
@@ -52,4 +54,9 @@ export interface RiskExplanation {
 export interface PanelRiskResponse {
   latest: RiskExplanation | RiskScore | null;
   history: RiskScore[];
+  // Asama 9: mevcut alanlari degistirmeyen, backwards-compatible decision
+  // support eklentileri (bkz. docs/decision-support.md). Eski tuketiciler
+  // bu alanlari yoksayabilir.
+  trendEstimate?: TrendEstimate;
+  recommendedActions?: RecommendedAction[];
 }

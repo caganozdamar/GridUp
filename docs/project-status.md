@@ -18,13 +18,18 @@ amacıdır.
 | SCADA Modbus TCP | IMPLEMENTED PROTOTYPE | Read-only, demo portu 1502; bkz. modbus-register-map.md |
 | On-prem Docker deployment | IMPLEMENTED PROTOTYPE | `docker-compose.onprem.yml`; gerçekten build edilip çalıştırılarak doğrulandı |
 | 100-panel load test | VALIDATED IN TEST | Bkz. scalability.md — tek makine/tek çalıştırma benchmark'ı, production garantisi değil |
+| Trend-based Critical Threshold Estimate | IMPLEMENTED PROTOTYPE | Aşama 9 — `apps/api/src/decision-support/trend-estimate.util.ts`; ML/AI değil, doğrusal trend + guard'lar. Bkz. decision-support.md |
+| Recommended Actions | IMPLEMENTED | Aşama 9 — mevcut anomaly flag'lerinden deterministic, inspection-oriented mapping. Bkz. decision-support.md |
+| Panel Event Timeline | IMPLEMENTED | Aşama 9 — mevcut RiskScore/Anomaly/Alarm/Notification kayıtlarından derived, yeni DB modeli yok. Bkz. decision-support.md |
+| Sensor Data Health | IMPLEMENTED | Aşama 9 — panel seviyesinde VALID/STALE/NO_DATA, SCADA Gateway'in stale-data semantiğiyle tutarlı. Bkz. decision-support.md |
+| Operational Metrics | IMPLEMENTED | Aşama 9 — `GET /metrics/operations`, gerçek DB aggregate'leri (Early Warnings/Critical Escalations/Notifications Delivered). Bkz. decision-support.md |
 | Physical field module | CONCEPT + FIRMWARE IN WOKWI | Bkz. field-module.md, [electronic-design.md](electronic-design.md); gerçek kart veya PCB inşa edilmedi, firmware yalnızca Wokwi'de çalıştırıldı |
 | Real industrial sensors | NOT YET FIELD VALIDATED | Sensör sınıfları önerilmiştir (bkz. field-module.md), kesin model/vendor seçimi yapılmamıştır |
 | Arc flash detection (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ARC_FLASH`, `ARC_FLASH` anomalisi, skor tabanı (floor), Modbus 41001+ bloğu. Veri kaynağı: `apps/simulator` (`npm run demo:arc`, sentetik) — gerçek optik sensör doğrulanmadı |
 | Partial discharge / acoustic (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ACOUSTIC`, `PARTIAL_DISCHARGE` anomalisi, nem korelasyon bonusu. Akustik seviye (dB) bir **gösterge**dir; gerçek kısmi deşarj ölçümü (UHF/TEV/HFCT) değildir |
 | Field module firmware (C, ESP32) | RUNS IN WOKWI, NOT RUN ON REAL HARDWARE | `firmware/`: C çekirdeği + ESP-IDF HAL (Wi-Fi, HTTP, SNTP, DHT22, ADC). ESP-IDF v5.5.5 ile derlenir; çekirdek mantığı sahte HAL'le birim testli; Wokwi'de sensörleri okuyup yerel API'ye gönderir. Gerçek kartta ve gerçek sensörlerle denenmedi. Bkz. [firmware-flow.md](firmware-flow.md) |
 | Electronic design docs | DOCUMENTED (DEMO SCHEMATIC) | [electronic-design.md](electronic-design.md): devre şeması, pin ve bileşen tablosu. Özel PCB yerleşimi çizilmedi |
-| Field conditions and installation/failure analysis | DOCUMENTED (DESIGN ONLY) | [field-conditions.md](field-conditions.md), [installation-and-failure-analysis.md](installation-and-failure-analysis.md): sıcaklık/manyetik alan yaklaşımı, kurulum ilkeleri, FMEA. Hiçbir test yapılmadı. FMEA iki kritik boşluğu işaretler: modül susunca çevrimdışı tespiti ve alarm dalgalanması |
+| Field conditions and installation/failure analysis | DOCUMENTED (DESIGN ONLY) | [field-conditions.md](field-conditions.md), [installation-and-failure-analysis.md](installation-and-failure-analysis.md): sıcaklık/manyetik alan yaklaşımı, kurulum ilkeleri, FMEA. Hiçbir test yapılmadı. FMEA iki kritik boşluğu işaretler: susan modül için yalnızca dashboard rozeti var, alarm/bildirim yok; ve alarm dalgalanması (histerezis/cooldown yok) |
 | Real ADM/GDZ SCADA connection | NOT REQUIRED FOR HACKATHON / FUTURE FIELD PILOT | Gerçek SCADA sistemine bağlanılmadı; sadece Modbus TCP server prototipi çalışıyor |
 | Authentication | NOT IMPLEMENTED | Hackathon kapsamı dışı; production öncesi zorunlu (bkz. on-premise-architecture.md "Production Considerations") |
 | Public cloud / AWS / Azure / Firebase | NOT USED | Sistem tamamen on-premise/Docker Compose ile çalışır |
@@ -44,4 +49,5 @@ uca senaryosu (bkz. [code-freeze.md](code-freeze.md)).
 | ----- | ------ |
 | [final-architecture.md](final-architecture.md) | Katman bazlı implemented/concept özeti |
 | [field-module.md](field-module.md) | Future sensor extension detayları |
+| [decision-support.md](decision-support.md) | Aşama 9: Time-to-Critical, Recommended Actions, Data Health, Timeline, Metrics |
 | [code-freeze.md](code-freeze.md) | Son doğrulama sonuçları ve known limitations |

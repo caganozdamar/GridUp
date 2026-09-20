@@ -107,7 +107,7 @@ sistemin **bugünkü** davranışını (koddan/testten doğrulanmış) ve öneri
 | - | ---------- | ----------- | ---- | ---------------- | ------------- | ----- |
 | 1 | Sensör kopması veya kısa devre (NTC açık/kısa) | Kablo koptu, konnektör gevşedi | O kanal ölçülemez | Firmware ADC uç değerinde `NaN` üretir ve o kanalı **göndermez**; yerel kritik-bant kontrolü yok sayar | Kanal başına "veri yok" alarmı | Kısmen (bkz. #3) |
 | 2 | Wi-Fi/ağ kopması | Metal pano zayıf sinyal, ağ arızası | Veri merkeze ulaşmaz | Modül örneklemeyi sürdürür; ESP32 derlemesinde **32 tick** tamponlar (2 sn aralıkta ≈ 64 sn); dolunca en eski kayıt düşer; bağlanınca birikeni tek batch'te yollar (birim testli) | Daha uzun kesinti için kalıcı tampon, ağ yedekliliği | Var, sınırlı |
-| 3 | **Modül/sensör susar, backend fark etmez** | Güç kesildi, modül kilitlendi, sürekli Wi-Fi yok | Pano "sağlıklı" görünmeye devam edebilir | **Risk motoru her sensörün son 10 okumasını yaşına bakmadan kullanır** ve panonun `status` alanı hiçbir yerde güncellenmez. Bayat veriyi yalnızca SCADA gateway işaretler (`Data Quality` = INVALID, varsayılan 10 sn) | Panel başına "son okuma yaşı" denetimi, eşik aşılınca "modül çevrimdışı" alarmı ve bildirimi; risk hesabını bayat veriye dayandırmamak | **Eksik (kritik)** |
+| 3 | **Modül/sensör susar, ama alarm ve bildirim çıkmaz** | Güç kesildi, modül kilitlendi, sürekli Wi-Fi yok | Pano dashboard'da bayat/boş görünür, ama kimse uyarılmaz ve risk skoru eski okumalarla hesaplanmaya devam eder | Panel sağlığı (`dataHealth`: `VALID`/`STALE`/`NO_DATA`; aktif sensörlerin son okuması 10 sn'den eskiyse `STALE`) hesaplanır ve dashboard'da rozet olarak gösterilir; SCADA gateway'de `Data Quality` = INVALID olur. **Ancak bu yalnızca bir göstergedir:** risk motoru, alarm ve bildirim kodu bayatlığa bakmaz, her sensörün son 10 okumasını yaşına bakmadan kullanır ve panonun `status` alanı hiçbir yerde güncellenmez | `STALE`/`NO_DATA`'yı alarm ve bildirime bağlamak ("modül çevrimdışı" anomalisi), risk hesabını bayat veriye dayandırmamak | **Kısmen: gösterge var, alarm/bildirim yok (kritik)** |
 | 4 | Modül kilitlenmesi | Yazılım hatası, gürültü | Örnekleme durur | Görev watchdog'u yapılandırmada açık (`CONFIG_ESP_TASK_WDT_EN`); gerçek kartta denenmedi | Watchdog'un gerçek kartta doğrulanması, reset nedeninin kaydı | Kısmen |
 | 5 | Güç kesintisi / brownout | Panonun ya da modül beslemesinin gitmesi | Modül yeniden başlar, RAM'deki tampon kaybolur | Açılışta yeniden provizyon eder; tampon kalıcı değildir | Kalıcı tampon, güç izleme | Var, sınırlı |
 | 6 | Yanlış pozitif (sahte alarm) | EMI/ADC sıçraması | Gereksiz SMS, güven kaybı | Ortalama alma ve 10 okumalık pencere gürültüyü azaltır; **ark flaş/akustik pencere tepe değerini kullanır**, tek sıçrama 10 tick boyunca skor tabanı oluşturabilir | Girişte filtre, kritik kanallarda kısa süreli teyit (bkz. [field-conditions.md](field-conditions.md)) | Kısmen |
@@ -122,10 +122,11 @@ sistemin **bugünkü** davranışını (koddan/testten doğrulanmış) ve öneri
 | 15 | Modül kaynaklı yangın/hasar | Kısa devre, aşırı ısınma | Pano riski | Modülün panoya çıkışı yoktur; kutu ve sigorta önerisi var, uygulanmadı | Sigorta, V-0 kutu, izolasyon (bkz. [field-conditions.md](field-conditions.md)) | Yapılmadı |
 
 **Öncelik.** 3 numaralı madde en kritik olanıdır: bir erken uyarı sistemi, veri
-kesildiğinde "her şey yolunda" görünmemelidir. Önerilen çözüm, panonun son
-okuma yaşının izlenmesi, eşik aşılınca `SENSOR/MODULE OFFLINE` anomalisi ve
-bildirimidir. 8 numaralı madde (alarm dalgalanması) bildirim fırtınasına yol
-açtığı için ikinci önceliktir.
+kesildiğinde "her şey yolunda" görünmemeli **ve birini uyarmalıdır**. Dashboard'daki
+`dataHealth` rozeti kesintiyi görünür kılar, ama ekrana bakan kimse yoksa
+kesinti fark edilmez. Önerilen çözüm, `STALE`/`NO_DATA` durumunun bir
+`MODULE_OFFLINE` anomalisine, alarma ve bildirime dönüşmesidir. 8 numaralı madde
+(alarm dalgalanması) bildirim fırtınasına yol açtığı için ikinci önceliktir.
 
 ## 3. Bakım
 

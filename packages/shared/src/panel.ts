@@ -1,5 +1,6 @@
 import type { RiskScore } from './risk';
 import type { Sensor } from './sensor';
+import type { PanelDataHealth } from './decision-support';
 
 export enum PanelStatus {
   ONLINE = 'ONLINE',
@@ -30,6 +31,8 @@ export interface PanelSummary extends Panel {
   sensorCount: number;
   latestRiskScore: RiskScore | null;
   activeAlarmCount: number;
+  // Asama 9: sensor freshness derived field (bkz. docs/decision-support.md).
+  dataHealth: PanelDataHealth;
 }
 
 export interface PanelDetail extends PanelSummary {

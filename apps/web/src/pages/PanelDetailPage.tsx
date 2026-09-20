@@ -8,15 +8,21 @@ import { IconArrowLeft } from '../components/common/icons';
 import { RiskGauge } from '../components/risk/RiskGauge';
 import { RiskComponentsPanel } from '../components/risk/RiskComponentsPanel';
 import { ReasonsList } from '../components/risk/ReasonsList';
+import { TrendEstimateCard } from '../components/risk/TrendEstimateCard';
 import { SensorCard } from '../components/sensors/SensorCard';
 import { CableCurrentChart } from '../components/charts/CableCurrentChart';
 import { HumidityChart } from '../components/charts/HumidityChart';
 import { AnomaliesList } from '../components/anomalies/AnomaliesList';
+import { RecommendedActionsList } from '../components/decision-support/RecommendedActionsList';
+import { PanelDataHealthDetail } from '../components/decision-support/PanelDataHealthDetail';
+import { PanelTimeline } from '../components/decision-support/PanelTimeline';
 import { usePolling } from '../hooks/usePolling';
 import { useSystemStatus } from '../context/SystemStatusContext';
 import { panelsApi } from '../api/panels';
 import { POLLING_INTERVALS, CHART_POINTS } from '../config';
 import { formatTime } from '../utils/status';
+
+const TIMELINE_LIMIT = 30;
 
 const READINGS_LIMIT = 200;
 
@@ -32,15 +38,25 @@ export function PanelDetailPage() {
     POLLING_INTERVALS.panelDetail,
     [panelId],
   );
+  const timelinePoll = usePolling(
+    () => panelsApi.timeline(panelId, TIMELINE_LIMIT),
+    POLLING_INTERVALS.panelDetail,
+    [panelId],
+  );
 
-  const isOnline = panelPoll.isOnline && riskPoll.isOnline && anomaliesPoll.isOnline && readingsPoll.isOnline;
+  const isOnline =
+    panelPoll.isOnline && riskPoll.isOnline && anomaliesPoll.isOnline && readingsPoll.isOnline && timelinePoll.isOnline;
   const lastUpdated = useMemo(() => {
-    const candidates = [panelPoll.lastUpdated, riskPoll.lastUpdated, anomaliesPoll.lastUpdated, readingsPoll.lastUpdated].filter(
-      (d): d is Date => d !== null,
-    );
+    const candidates = [
+      panelPoll.lastUpdated,
+      riskPoll.lastUpdated,
+      anomaliesPoll.lastUpdated,
+      readingsPoll.lastUpdated,
+      timelinePoll.lastUpdated,
+    ].filter((d): d is Date => d !== null);
     if (candidates.length === 0) return null;
     return new Date(Math.max(...candidates.map((d) => d.getTime())));
-  }, [panelPoll.lastUpdated, riskPoll.lastUpdated, anomaliesPoll.lastUpdated, readingsPoll.lastUpdated]);
+  }, [panelPoll.lastUpdated, riskPoll.lastUpdated, anomaliesPoll.lastUpdated, readingsPoll.lastUpdated, timelinePoll.lastUpdated]);
 
   const { report } = useSystemStatus();
   useEffect(() => {
@@ -49,6 +65,9 @@ export function PanelDetailPage() {
 
   const panel = panelPoll.data;
   const risk = riskPoll.data?.latest ?? null;
+  const trendEstimate = riskPoll.data?.trendEstimate;
+  const recommendedActions = riskPoll.data?.recommendedActions;
+  const timelineEvents = timelinePoll.data?.events ?? [];
   const anomalies = anomaliesPoll.data ?? [];
   const readings = useMemo(() => readingsPoll.data ?? [], [readingsPoll.data]);
 
@@ -112,7 +131,8 @@ export function PanelDetailPage() {
   const level = (risk?.level ?? panel.latestRiskScore?.level ?? 'NORMAL') as RiskLevel;
   const components: RiskComponents | null = risk && 'components' in risk ? risk.components : null;
   const reasons: string[] = risk && 'reasons' in risk ? risk.reasons : [];
-  const hasConnectionIssue = panelPoll.error || riskPoll.error || anomaliesPoll.error || readingsPoll.error;
+  const hasConnectionIssue =
+    panelPoll.error || riskPoll.error || anomaliesPoll.error || readingsPoll.error || timelinePoll.error;
 
   const statusLabel = panel.status.charAt(0) + panel.status.slice(1).toLowerCase();
 
@@ -139,12 +159,22 @@ export function PanelDetailPage() {
         <div className="risk-overview-details">
           <h3 className="section-title">Risk Analysis</h3>
           {components ? <RiskComponentsPanel components={components} /> : <p className="empty-hint">Risk data pending…</p>}
+          <TrendEstimateCard trendEstimate={trendEstimate} />
         </div>
       </section>
 
       <section className="card">
         <h3 className="section-title">Why is risk increasing?</h3>
         {reasons.length > 0 ? <ReasonsList reasons={reasons} /> : <p className="empty-hint">No active risk factors.</p>}
+      </section>
+
+      <section className="card">
+        <h3 className="section-title">Recommended Actions</h3>
+        <RecommendedActionsList actions={recommendedActions} />
+      </section>
+
+      <section className="card">
+        {panel.dataHealth && <PanelDataHealthDetail dataHealth={panel.dataHealth} />}
       </section>
 
       <section className="sensor-cards-grid">
@@ -161,6 +191,11 @@ export function PanelDetailPage() {
       <section className="card">
         <h3 className="section-title">Anomalies</h3>
         <AnomaliesList anomalies={anomalies} />
+      </section>
+
+      <section className="card">
+        <h3 className="section-title">Event Timeline</h3>
+        <PanelTimeline events={timelineEvents} />
       </section>
     </div>
   );
