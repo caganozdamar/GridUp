@@ -7,7 +7,7 @@ Organizatör, mevcut SCADA entegrasyonu için doldurulmuş bir **Modbus haritala
 - **Adresleme:** ADDRESS = 0-based PDU adresi; REGISTER LABEL = 40001 + ADDRESS (Modicon gösterimi)
 - **Format:** tüm register'lar 16 bit işaretsiz (unsigned int); değer `Raw x MULTIPLIER`. Ondalıklı değerler ×10 saklanır, `NaN` yerine 0 yazılır, sonuç 0-65535'e sıkıştırılır
 - **Pano bloğu:** PANO-NNN için çekirdek blok `ADDRESS = (NNN-1) x 10 + offset`, genişletilmiş blok `ADDRESS = 1000 + (NNN-1) x 4 + offset`; en çok 100 pano
-- **Tam liste (100 pano, 1400 satır):** [assets/modbus-register-map.csv](assets/modbus-register-map.csv), `node scripts/export-modbus-map.mjs` ile üretilir (kaynak: `apps/scada-gateway/src/register-map.ts`)
+- **Tam liste (100 pano, 1400 satır):** depoda tutulmaz, `npm run build:scada-gateway && node scripts/export-modbus-map.mjs` ile `docs/assets/modbus-register-map.csv` olarak üretilir (kaynak: `apps/scada-gateway/src/register-map.ts`)
 
 ## Tablo (PANO-001 bloğu; diğer panolar için formülü kullanın)
 
