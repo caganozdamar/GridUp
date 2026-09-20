@@ -17,8 +17,8 @@ Tarih: 2026-09-20. [demo-script.md](demo-script.md) adımları, temiz ve izole b
 ## Prova sırasında bulunan sorunlar
 
 1. **On-prem yığında tohum verisi yok.** Yeni kurulumda `/panels` boş döner ve simülatör çalışamaz. Prova için host'tan, konteyner IP'sine `DATABASE_URL` verilerek `npm run prisma:seed` çalıştırıldı (onprem-postgres portu host'a açık değil). Demo öncesi bu adım belgelenmeli veya compose'a seed eklenmeli. **Düzeltilmedi.**
-2. **Risk skoru çırpınıyor.** `COMBINED_FAILURE` sırasında PANO-003 skoru arada NORMAL'e (3-9) düşüp tekrar 100'e dönebiliyor; bu yüzden aynı panoda kısa aralıklarla birden çok CRITICAL alarm açılıp çözülüyor (yaklaşık 30 alarm satırı birkaç dakikada). Bildirim cooldown'u SMS/WhatsApp yağmurunu engelliyor. Jüri önünde Alarms sayfası kalabalık görünebilir. **Düzeltilmedi.**
-3. **Aynı anda aynı panoya iki alarm.** Aynı milisaniyede aynı panoya iki CRITICAL alarm satırı oluşuyor (çift kayıt). **Düzeltilmedi.**
+2. **Aynı panoya eşzamanlı iki veri kaynağı.** İki simülatör (ya da simülatör + Wokwi) aynı panoya yazınca skor NORMAL ile CRITICAL arasında gidip geliyor ve aynı anomaliye bağlı çift alarm/anomali satırları oluşuyor (aynı milisaniyede, aynı `anomalyId`). İlk provada bu, yanlışlıkla üst üste çalışan simülatörlerden kaynaklandı; tek simülatörle yeniden denendi: skor temiz yükseldi (25 → 100 → 93), çırpınma ve çift kayıt görülmedi. Kalan risk: aynı panoya iki kaynak yazarsa çift kayıt oluşur (demo uyarısı zaten var). Sunucu tarafı koruma **yoktur**.
+3. **Alarms sayfası eski koşuların satırlarını gösteriyor.** Tekrarlanan demo koşuları alarm geçmişini kalabalıklaştırır; jüri öncesi temiz DB kullanın.
 4. **Prova hatası (ürün hatası değil):** Birden fazla simülatör örneği üst üste çalışınca (`demo:*` betiği `tsx watch` alt süreçlerini bırakıyor) sonuçlar karışıyor. Demoda yeni senaryoya geçmeden önce eski simülatörün gerçekten durduğu `ps` ile kontrol edilmeli; `Ctrl+C` ile durdurmak yeterli olmalı.
 5. **Okuma uç noktaları büyük veride yavaşlıyor** ([resource-usage.md](resource-usage.md) §5); demo veritabanı küçük tutulmalı.
 
