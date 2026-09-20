@@ -133,3 +133,10 @@ sistemi saha uygulanabilirligi ve final demo acisindan tamamlamakti:
 /docs            Proje dokumantasyonu
 docker-compose.yml  Sadece PostgreSQL servisini ayaga kaldirir
 ```
+
+> **Güncel durum notu (Aşama 8 sonrası).** Yukarıdaki Aşama 8 kaydı o günkü
+> durumu anlatır ve tarihsel olarak korunmuştur. Sonrasında değişenler:
+> `ARC_FLASH` ve `ACOUSTIC` sensör tipleri artık "Future" değil, uçtan uca
+> uygulanmıştır (simüle sensörle); Field Module artık yalnızca simulator değil,
+> Wokwi'de çalışan bir ESP32 firmware'iyle de temsil edilir. Güncel matris için
+> bkz. [project-status.md](project-status.md).

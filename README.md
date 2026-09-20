@@ -220,19 +220,21 @@ ve production considerations için bkz.
 
 ## Ölçeklenebilirlik Testi
 
-100 pano / 400 sensör ölçeğinde, mevcut 5 demo panosunu bozmadan, izole/geçici
-test fixture'ları ile gerçek ölçüm almak için:
+100 pano / 600 sensör (pano başına 6 sensör) ölçeğinde, mevcut 5 demo panosunu
+bozmadan, izole/geçici test fixture'ları ile gerçek ölçüm almak için:
 
 ```bash
 node apps/api/scripts/scada-scale-test.mjs
 ```
 
-En son ölçüm (bkz. [docs/scalability.md](docs/scalability.md)):
+En son ölçüm (bkz. [docs/scalability.md](docs/scalability.md)). API tek istekte
+en fazla 500 okuma kabul ettiği için test iki biçimde ölçer: 500'lük parçalarla
+gönderen bir gateway ve kendi küçük batch'ini eşzamanlı gönderen 100 modül:
 
 ```
-100 panels | 400 sensors | 400 readings/tick | 5 ticks
-Total readings sent: 2000 | Failed ticks: 0
-Average batch processing ≈ 1006.9 ms
+100 panels | 600 sensors | 600 readings/tick | 5 ticks per mode
+Gateway (500-reading chunks)  : average tick ≈ 1482 ms, 0 failed
+100 modules, concurrent       : average tick ≈ 206 ms,  0 failed
 ```
 
 Bu bir **measured prototype benchmark'ıdır**, production garantisi değildir.
