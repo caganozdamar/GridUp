@@ -15,6 +15,10 @@ export const RECOMMENDED_ACTION_MESSAGES: Record<AnomalyType, string> = {
   [AnomalyType.OVERCURRENT]: 'Inspect conductor loading and compare current with expected operating conditions.',
   [AnomalyType.HIGH_HUMIDITY]: 'Inspect enclosure moisture, ventilation and environmental sealing.',
   [AnomalyType.MULTI_SENSOR_RISK]: 'Prioritize inspection: multiple sensor conditions are increasing simultaneously.',
+  [AnomalyType.ARC_FLASH]:
+    'Maintain safe distance and inspect for visible arc damage, tracking marks or insulation breakdown from outside the enclosure before any further action.',
+  [AnomalyType.PARTIAL_DISCHARGE]:
+    'Inspect insulation surfaces and connection points for partial discharge indicators and consider scheduling an acoustic/ultrasonic emission survey.',
 };
 
 export const RECOMMENDED_ACTIONS_SAFETY_NOTE = 'Inspection guidance only. Follow authorized electrical safety procedures.';

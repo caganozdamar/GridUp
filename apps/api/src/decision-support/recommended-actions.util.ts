@@ -46,6 +46,8 @@ export function buildRecommendedActions(input: RecommendedActionsInput): Recomme
     { type: AnomalyType.TEMPERATURE_RISE, active: flags.temperatureRise, severityScore: components.trend },
     { type: AnomalyType.OVERCURRENT, active: flags.overcurrent, severityScore: components.current },
     { type: AnomalyType.HIGH_HUMIDITY, active: flags.highHumidity, severityScore: components.humidity },
+    { type: AnomalyType.ARC_FLASH, active: flags.arcFlash, severityScore: components.arcFlash },
+    { type: AnomalyType.PARTIAL_DISCHARGE, active: flags.partialDischarge, severityScore: components.acoustic },
     { type: AnomalyType.MULTI_SENSOR_RISK, active: flags.multiSensorRisk, severityScore: score },
   ];
 

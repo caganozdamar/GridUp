@@ -8,14 +8,44 @@ Timeline, Operational Metrics — bkz. [decision-support.md](decision-support.md
 canlı, çalışan bir sistem üzerinde doğrulandı. Detaylı sonuçlar için bkz.
 sohbet raporu; özet:
 
+### GitHub push sırasında bulunan divergence
+
+Aşama 9 commit'i GitHub'a push edilmeye çalışıldığında, `origin/main`'in bu
+çalışma kopyasında hiç bulunmayan 15 commit'lik ayrı bir özellik içerdiği
+görüldü (arc flash / partial discharge risk motoru — `AnomalyType.ARC_FLASH`,
+`AnomalyType.PARTIAL_DISCHARGE`, yeni `RiskComponents`/`RiskFlags` alanları,
+yeni bir Prisma migration'ı — ve ayrıca ESP32 field module firmware'i).
+Bu iki hat merge edildi (`git merge origin/main`, conflict'siz auto-merge);
+uyum için:
+
+- `apps/api/src/decision-support/recommended-actions.config.ts`'e
+  `ARC_FLASH`/`PARTIAL_DISCHARGE` için inspection-oriented mesajlar eklendi
+  (aksi halde `Record<AnomalyType, string>` derlenmezdi).
+- `recommended-actions.util.ts`'deki karar listesine bu iki flag/component
+  eklendi (`flags.arcFlash`/`flags.partialDischarge`,
+  `components.arcFlash`/`components.acoustic`) — böylece bu iki yeni anomaly
+  tipi de Recommended Actions'ta görünür.
+- `recommended-actions.util.spec.ts` yeni zorunlu alanlarla güncellendi + iki
+  yeni test eklendi (ARC_FLASH, PARTIAL_DISCHARGE guidance).
+- `npx prisma generate` + `npx prisma migrate deploy` ile yeni migration
+  (`20260919210000_arc_flash_acoustic`) uygulandı.
+- `docs/decision-support.md`'deki mapping tablosu güncellendi.
+
+Merge sonrası **tüm** doğrulama komutları (typecheck/lint/build/test/e2e,
+aşağıda) yeniden ve başarıyla çalıştırıldı; risk score formülü, threshold,
+simulator matematiği, alarm/anomaly lifecycle, notification mapping, Modbus
+register haritası veya SCADA Gateway davranışı bu reconciliation sırasında
+**değiştirilmedi** — yalnızca yeni anomaly tiplerine eksik olan
+decision-support mapping'i tamamlandı.
+
 ```bash
 npm run build:shared     # OK
 npm run typecheck        # OK — api, scada-gateway, simulator, web, shared
 npm run lint              # OK — aynı pre-existing 1 uyarı (SystemStatusContext.tsx), Aşama 9 dosyalarında 0 uyarı
 npm run build              # OK — api, scada-gateway, simulator, web, shared
-npm run test (api)          # OK — 8 test file, 59 test, hepsi PASS (14 yeni decision-support testi dahil)
-npm run test (scada-gateway) # OK — 3 test file, 22 test, hepsi PASS (değişmedi)
-npm run test (simulator)     # OK — 2 test file, 16 test, hepsi PASS (değişmedi)
+npm run test (api)          # OK — 8 test file, 68 test, hepsi PASS (merge sonrası: 14 decision-support + arc-flash/PD risk-scoring testleri dahil)
+npm run test (scada-gateway) # OK — 3 test file, 28 test, hepsi PASS (merge sonrası: arc flash/acoustic register testleri dahil)
+npm run test (simulator)     # OK — 2 test file, 21 test, hepsi PASS (merge sonrası: arc flash/acoustic generator testleri dahil)
 npm run test:e2e (api)        # OK — 5 test file, 24 test, hepsi PASS (9 yeni decision-support e2e testi dahil, gerçek Postgres'e karşı)
 ```
 

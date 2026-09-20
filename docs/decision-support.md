@@ -119,14 +119,22 @@ birebir kullanılır; uydurma enum yoktur.
 | `TEMPERATURE_RISE` | "Check for increasing load or developing thermal hotspots." |
 | `OVERCURRENT` | "Inspect conductor loading and compare current with expected operating conditions." |
 | `HIGH_HUMIDITY` | "Inspect enclosure moisture, ventilation and environmental sealing." |
+| `ARC_FLASH` | "Maintain safe distance and inspect for visible arc damage, tracking marks or insulation breakdown from outside the enclosure before any further action." |
+| `PARTIAL_DISCHARGE` | "Inspect insulation surfaces and connection points for partial discharge indicators and consider scheduling an acoustic/ultrasonic emission survey." |
 | `MULTI_SENSOR_RISK` | "Prioritize inspection: multiple sensor conditions are increasing simultaneously." |
+
+`ARC_FLASH`/`PARTIAL_DISCHARGE`, decision-support katmanından *sonra* ana
+branch'e eklenen arc flash / partial discharge (acoustic) risk motoruyla
+birlikte gelen `AnomalyType` değerleridir (bkz. project-status.md); mapping
+tablosu bu iki değeri de kapsayacak şekilde genişletildi, aksi halde
+`Record<AnomalyType, string>` derlenmezdi.
 
 Mesajlar mevcut risk-engine flag'lerinden (`RiskFlags` —
 `highTemperature`/`temperatureRise`/`overcurrent`/`highHumidity`/
-`multiSensorRisk`) üretilir; bunlar `RiskEngineService`'in zaten hesapladığı
-ve `Anomaly` olarak persist ettiği ile **aynı** flag'lerdir. Risk engine'in
-kendisi değiştirilmez, yalnızca aynı bilgiden salt-okunur bir türetim
-yapılır.
+`arcFlash`/`partialDischarge`/`multiSensorRisk`) üretilir; bunlar
+`RiskEngineService`'in zaten hesapladığı ve `Anomaly` olarak persist ettiği
+ile **aynı** flag'lerdir. Risk engine'in kendisi değiştirilmez, yalnızca aynı
+bilgiden salt-okunur bir türetim yapılır.
 
 ### Priority
 
