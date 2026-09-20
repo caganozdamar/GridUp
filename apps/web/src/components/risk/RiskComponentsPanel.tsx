@@ -5,6 +5,8 @@ const LABELS: Record<keyof RiskComponents, string> = {
   current: 'Current',
   humidity: 'Humidity',
   trend: 'Trend',
+  arcFlash: 'Arc Flash',
+  acoustic: 'Acoustic / PD',
 };
 
 const KEYS = Object.keys(LABELS) as Array<keyof RiskComponents>;

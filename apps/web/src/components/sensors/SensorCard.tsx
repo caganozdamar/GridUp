@@ -5,6 +5,8 @@ const SENSOR_LABELS: Record<SensorType, string> = {
   [SensorType.CABLE_TEMPERATURE]: 'Cable Temperature',
   [SensorType.HUMIDITY]: 'Humidity',
   [SensorType.CURRENT]: 'Current',
+  [SensorType.ARC_FLASH]: 'Arc Flash (optical)',
+  [SensorType.ACOUSTIC]: 'Acoustic / PD',
 };
 
 export function SensorCard({ sensor, value }: { sensor: Sensor; value: number | null }) {

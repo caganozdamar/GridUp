@@ -20,7 +20,25 @@ export const HOLDING_REGISTER_LABEL_BASE = 40001;
 /** Prototip demo icin desteklenen maksimum pano sayisi (100 x 10 = 1000 register). */
 export const MAX_SUPPORTED_PANELS = 100;
 
-export const TOTAL_HOLDING_REGISTERS = REGISTERS_PER_PANEL * MAX_SUPPORTED_PANELS;
+/**
+ * Genisletilmis blok (ark flash + akustik). Mevcut 10-register'lik cekirdek
+ * blogun adresleri DEGISMEZ (geriye uyumluluk: SCADA tarafinda mevcut
+ * eslemeler bozulmasin); yeni register'lar cekirdek alanin HEMEN ARDINDAN,
+ * ayri bir bolgede yer alir: label 41001'den baslar.
+ */
+export const EXTENDED_REGISTERS_PER_PANEL = 4;
+
+/** Genisletilmis bolgenin 0-based baslangic adresi (= cekirdek bolgenin toplam uzunlugu). */
+export const EXTENDED_BASE_ADDRESS = REGISTERS_PER_PANEL * MAX_SUPPORTED_PANELS;
+
+export const TOTAL_HOLDING_REGISTERS = EXTENDED_BASE_ADDRESS + EXTENDED_REGISTERS_PER_PANEL * MAX_SUPPORTED_PANELS;
+
+export enum ExtendedRegisterOffset {
+  ARC_FLASH_X10 = 0,
+  ACOUSTIC_X10 = 1,
+  ARC_FLASH_ACTIVE = 2,
+  PARTIAL_DISCHARGE_ACTIVE = 3,
+}
 
 export enum RegisterOffset {
   RISK_SCORE = 0,
@@ -92,6 +110,16 @@ export function getRegisterStartAddress(blockIndex: number): number {
 /** blockIndex'in ilk register'inin 1-based/label ("40001" tarzi) adresi. */
 export function getRegisterStartLabel(blockIndex: number): number {
   return HOLDING_REGISTER_LABEL_BASE + getRegisterStartAddress(blockIndex);
+}
+
+/** blockIndex'in genisletilmis blogunun ilk register'inin 0-based Modbus adresi. */
+export function getExtendedRegisterStartAddress(blockIndex: number): number {
+  return EXTENDED_BASE_ADDRESS + blockIndex * EXTENDED_REGISTERS_PER_PANEL;
+}
+
+/** blockIndex'in genisletilmis blogunun ilk register'inin label ("41001" tarzi) adresi. */
+export function getExtendedRegisterStartLabel(blockIndex: number): number {
+  return HOLDING_REGISTER_LABEL_BASE + getExtendedRegisterStartAddress(blockIndex);
 }
 
 export function getRegisterStartAddressForPanelCode(panelCode: string): number {

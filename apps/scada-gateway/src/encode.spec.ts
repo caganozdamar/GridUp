@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { encodePanelRegisters, isSnapshotFresh } from './encode.js';
-import { MODBUS_BOOL, MODBUS_DATA_QUALITY, MODBUS_PANEL_STATUS, MODBUS_RISK_LEVEL, RegisterOffset } from './register-map.js';
+import { encodeExtendedRegisters, encodePanelRegisters, isSnapshotFresh } from './encode.js';
+import {
+  ExtendedRegisterOffset,
+  MODBUS_BOOL,
+  MODBUS_DATA_QUALITY,
+  MODBUS_PANEL_STATUS,
+  MODBUS_RISK_LEVEL,
+  RegisterOffset,
+} from './register-map.js';
 import type { ScadaPanelSnapshot } from './types.js';
 
 const NOW = Date.parse('2026-01-01T00:00:00.000Z');
@@ -17,6 +24,10 @@ function baseSnapshot(overrides: Partial<ScadaPanelSnapshot> = {}): ScadaPanelSn
     cableTemperature: 36.8,
     humidity: 44.1,
     current: 82.6,
+    arcFlash: 0.4,
+    acoustic: 41.2,
+    arcFlashActive: false,
+    partialDischargeActive: false,
     activeAlarm: false,
     activeAnomalyCount: 0,
     lastReadingAt: new Date(NOW).toISOString(),
@@ -116,5 +127,29 @@ describe('isSnapshotFresh', () => {
   it('is inclusive at exactly the stale threshold', () => {
     expect(isSnapshotFresh(new Date(NOW - STALE_MS).toISOString(), NOW, STALE_MS)).toBe(true);
     expect(isSnapshotFresh(new Date(NOW - STALE_MS - 1).toISOString(), NOW, STALE_MS)).toBe(false);
+  });
+});
+
+describe('encodeExtendedRegisters', () => {
+  it('scales arc flash (%) and acoustic (dB) by x10', () => {
+    const registers = encodeExtendedRegisters(baseSnapshot({ arcFlash: 47.5, acoustic: 68.3 }));
+    expect(registers[ExtendedRegisterOffset.ARC_FLASH_X10]).toBe(475);
+    expect(registers[ExtendedRegisterOffset.ACOUSTIC_X10]).toBe(683);
+  });
+
+  it('encodes the active flags as 0/1', () => {
+    const quiet = encodeExtendedRegisters(baseSnapshot());
+    expect(quiet[ExtendedRegisterOffset.ARC_FLASH_ACTIVE]).toBe(MODBUS_BOOL.NO);
+    expect(quiet[ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE]).toBe(MODBUS_BOOL.NO);
+
+    const active = encodeExtendedRegisters(baseSnapshot({ arcFlashActive: true, partialDischargeActive: true }));
+    expect(active[ExtendedRegisterOffset.ARC_FLASH_ACTIVE]).toBe(MODBUS_BOOL.YES);
+    expect(active[ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE]).toBe(MODBUS_BOOL.YES);
+  });
+
+  it('writes 0 (never NaN) when the panel has no arc flash / acoustic sensor', () => {
+    const registers = encodeExtendedRegisters(baseSnapshot({ arcFlash: null, acoustic: null }));
+    expect(registers[ExtendedRegisterOffset.ARC_FLASH_X10]).toBe(0);
+    expect(registers[ExtendedRegisterOffset.ACOUSTIC_X10]).toBe(0);
   });
 });

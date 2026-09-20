@@ -1,0 +1,7 @@
+# Wokwi project config. Build the firmware first (see ../esp32/README.md):
+#   cd ../esp32 && idf.py build
+# Paths are relative to this file.
+[wokwi]
+version = 1
+firmware = '../esp32/build/flasher_args.json'
+elf = '../esp32/build/gridup-field-module.elf'

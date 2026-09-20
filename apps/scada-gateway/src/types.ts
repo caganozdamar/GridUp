@@ -14,6 +14,10 @@ export interface ScadaPanelSnapshot {
   cableTemperature: number | null;
   humidity: number | null;
   current: number | null;
+  arcFlash: number | null;
+  acoustic: number | null;
+  arcFlashActive: boolean;
+  partialDischargeActive: boolean;
   activeAlarm: boolean;
   activeAnomalyCount: number;
   lastReadingAt: string | null;

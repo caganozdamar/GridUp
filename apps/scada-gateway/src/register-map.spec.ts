@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  EXTENDED_BASE_ADDRESS,
+  EXTENDED_REGISTERS_PER_PANEL,
   getBlockIndexForPanelCode,
+  getExtendedRegisterStartAddress,
+  getExtendedRegisterStartLabel,
+  TOTAL_HOLDING_REGISTERS,
   getRegisterStartAddress,
   getRegisterStartLabel,
   MAX_SUPPORTED_PANELS,
@@ -52,5 +57,23 @@ describe('register-map', () => {
     }
 
     expect(usedAddresses.size).toBe(MAX_SUPPORTED_PANELS * REGISTERS_PER_PANEL);
+  });
+
+  it('places the extended block right after the core block, starting at label 41001', () => {
+    expect(EXTENDED_BASE_ADDRESS).toBe(MAX_SUPPORTED_PANELS * REGISTERS_PER_PANEL);
+    expect(getExtendedRegisterStartAddress(0)).toBe(1000);
+    expect(getExtendedRegisterStartLabel(0)).toBe(41001);
+    expect(getExtendedRegisterStartLabel(2)).toBe(41009); // PANO-003
+    expect(TOTAL_HOLDING_REGISTERS).toBe(1000 + MAX_SUPPORTED_PANELS * EXTENDED_REGISTERS_PER_PANEL);
+  });
+
+  it('never overlaps core and extended registers across 1..100 panels', () => {
+    const used = new Set<number>();
+    for (let block = 0; block < MAX_SUPPORTED_PANELS; block++) {
+      for (let o = 0; o < REGISTERS_PER_PANEL; o++) used.add(getRegisterStartAddress(block) + o);
+      for (let o = 0; o < EXTENDED_REGISTERS_PER_PANEL; o++) used.add(getExtendedRegisterStartAddress(block) + o);
+    }
+    expect(used.size).toBe(MAX_SUPPORTED_PANELS * (REGISTERS_PER_PANEL + EXTENDED_REGISTERS_PER_PANEL));
+    expect(Math.max(...used)).toBe(TOTAL_HOLDING_REGISTERS - 1);
   });
 });

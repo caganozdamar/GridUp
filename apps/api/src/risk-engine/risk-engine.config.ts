@@ -12,6 +12,8 @@ export const SENSOR_BASELINES: Record<SensorType, { min: number; max: number }> 
   [SensorType.CABLE_TEMPERATURE]: { min: 30, max: 45 },
   [SensorType.HUMIDITY]: { min: 35, max: 60 },
   [SensorType.CURRENT]: { min: 60, max: 110 },
+  [SensorType.ARC_FLASH]: { min: 0, max: 3 },
+  [SensorType.ACOUSTIC]: { min: 35, max: 45 },
 };
 
 // Asama 4 madde 3 - sensor risk component'leri.
@@ -44,6 +46,26 @@ export const HUMIDITY_ANCHORS: Anchor[] = [
   [70, 45],
   [80, 75],
   [95, 100],
+];
+
+// Ark flash (optik yogunluk, %): normal pano ici ortam <=3; ani bir isik
+// patlamasi hizla kritik banda cikar. Trend degil, penceredeki ZIRVE deger
+// kullanilir (bkz. risk-scoring.ts) - kisa suren bir ark, sonraki okumada
+// sonse bile alarm penceresi boyunca gorunur kalir.
+export const ARC_FLASH_ANCHORS: Anchor[] = [
+  [3, 0],
+  [10, 40],
+  [30, 80],
+  [60, 100],
+];
+
+// Akustik / kismi desarj gostergesi (dB): normal ortam gurultusu <=45 dB;
+// 55 dB uzeri desarj/carpma sesi suphesi, 70 dB uzeri belirgin desarj.
+export const ACOUSTIC_ANCHORS: Anchor[] = [
+  [45, 0],
+  [55, 30],
+  [70, 65],
+  [85, 100],
 ];
 
 // Asama 4 madde 4 - trend/early warning: pencere icindeki degisim hizi
@@ -91,6 +113,16 @@ export const RISK_WEIGHTS = {
   trend: 0.25,
 };
 
+// Ark flash ve akustik bileşenler agirlikli toplama GIRMEZ: ark flash guvenlik-
+// kritik bir olaydir ve diger sensorler normalken bile skoru dusuk tutmamalidir.
+// Bunun yerine nihai skora "taban" (floor) olurlar: skor >= risk * carpan.
+// Akustik tek basina bir gurultu olabilecegi icin carpan < 1 (tek basina en
+// fazla HIGH), diger kanitlarla birlikte (nem bonusu) yukselir.
+export const DISCHARGE_FLOORS = {
+  arcFlash: 1.0,
+  acoustic: 0.7,
+};
+
 // Asama 4 madde 5 - multi-sensor correlation bonuslari.
 // Iki component de kendi esiginin uzerindeyse ek risk puani eklenir.
 export const CORRELATION_BONUSES = {
@@ -104,6 +136,12 @@ export const CORRELATION_BONUSES = {
     minHumidityRisk: 50,
     bonus: 8,
   },
+  // Nemli havada kismi desarj olasiligi artar.
+  acousticAndHumidity: {
+    minAcousticRisk: 30,
+    minHumidityRisk: 45,
+    bonus: 8,
+  },
 };
 
 // Component skorlari bu esikleri gectiginde ilgili Anomaly kaydi aktif kabul edilir.
@@ -112,4 +150,6 @@ export const ANOMALY_THRESHOLDS = {
   temperatureRise: 40, // cable temperature trend skoru
   overcurrent: 55,
   highHumidity: 45,
+  arcFlash: 40, // ~10% optik yogunluk
+  partialDischarge: 30, // ~55 dB
 };

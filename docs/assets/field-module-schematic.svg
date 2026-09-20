@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1120 760" width="1120" height="760" font-family="Helvetica, Arial, sans-serif" font-size="13">
+  <title>GRID UP Field Module - devre şeması (demo prototip)</title>
+  <rect width="1120" height="760" fill="#ffffff"/>
+  <defs>
+    <style>
+      .box { fill: #f5f7fa; stroke: #1f2933; stroke-width: 1.5; }
+      .mcu { fill: #eaf2fb; stroke: #1f2933; stroke-width: 2; }
+      .wire { stroke: #1f2933; stroke-width: 1.6; fill: none; }
+      .pwr { stroke: #b42318; stroke-width: 1.6; fill: none; }
+      .gnd { stroke: #344054; stroke-width: 1.6; fill: none; }
+      .opt { stroke: #667085; stroke-width: 1.3; fill: none; stroke-dasharray: 5 4; }
+      .t { fill: #1f2933; }
+      .tsmall { fill: #475467; font-size: 11.5px; }
+      .tb { fill: #1f2933; font-weight: 700; }
+      .pin { fill: #1f2933; font-size: 12px; font-family: "Courier New", monospace; }
+    </style>
+  </defs>
+
+  <text x="24" y="30" class="tb" font-size="18">GRID UP Field Module - devre şeması (demo prototip)</text>
+  <text x="24" y="50" class="tsmall">Kaynak: firmware/wokwi/diagram.json ve firmware/esp32/main/sensors_hw.h. Sinyal telleri siyah; +3V3 ve GND bağlantıları net etiketiyle gösterilmiştir.</text>
+
+  <!-- ESP32 -->
+  <rect x="420" y="80" width="280" height="640" rx="8" class="mcu"/>
+  <text x="560" y="112" text-anchor="middle" class="tb" font-size="15">ESP32 DevKit V1</text>
+  <text x="560" y="130" text-anchor="middle" class="tsmall">ESP32-WROOM, ADC1 girişleri</text>
+
+  <!-- left pins -->
+  <text x="432" y="174" class="pin">D4 / GPIO4</text>
+  <text x="432" y="274" class="pin">D34 / GPIO34 (ADC1)</text>
+  <text x="432" y="374" class="pin">D35 / GPIO35 (ADC1)</text>
+  <text x="432" y="474" class="pin">D32 / GPIO32 (ADC1)</text>
+  <text x="432" y="574" class="pin">D33 / GPIO33 (ADC1)</text>
+  <text x="432" y="664" class="pin">3V3</text>
+  <text x="432" y="694" class="pin">GND.1</text>
+
+  <!-- right pins -->
+  <text x="688" y="174" text-anchor="end" class="pin">D26 / GPIO26</text>
+  <text x="688" y="274" text-anchor="end" class="pin">D27 / GPIO27</text>
+  <text x="688" y="374" text-anchor="end" class="pin">D25 / GPIO25</text>
+  <text x="688" y="474" text-anchor="end" class="pin">TX0 / RX0</text>
+  <text x="688" y="574" text-anchor="end" class="pin">5V → 3V3</text>
+  <text x="688" y="694" text-anchor="end" class="pin">GND.2</text>
+
+  <!-- ===== left: sensors ===== -->
+  <!-- DHT22 -->
+  <rect x="40" y="130" width="200" height="90" rx="6" class="box"/>
+  <text x="140" y="152" text-anchor="middle" class="tb">DHT22 (dht)</text>
+  <text x="140" y="170" text-anchor="middle" class="tsmall">ortam sıcaklığı + nem</text>
+  <text x="52" y="192" class="tsmall">VCC → +3V3  ·  GND → GND</text>
+  <line x1="240" y1="170" x2="420" y2="170" class="wire"/>
+  <text x="330" y="164" text-anchor="middle" class="tsmall">SDA (tek-tel)</text>
+  <!-- optional pull-up -->
+  <line x1="340" y1="170" x2="340" y2="130" class="opt"/>
+  <rect x="331" y="100" width="18" height="30" class="box" stroke-dasharray="4 3"/>
+  <text x="322" y="119" text-anchor="end" class="tsmall">10 kΩ pull-up (önerilen)</text>
+  <text x="340" y="92" text-anchor="middle" class="tsmall">+3V3</text>
+
+  <!-- NTC -->
+  <rect x="40" y="230" width="200" height="80" rx="6" class="box"/>
+  <text x="140" y="252" text-anchor="middle" class="tb">NTC modülü (ntc)</text>
+  <text x="140" y="270" text-anchor="middle" class="tsmall">kablo yüzey sıcaklığı, β = 3950</text>
+  <text x="52" y="292" class="tsmall">VCC → +3V3  ·  GND → GND</text>
+  <line x1="240" y1="270" x2="420" y2="270" class="wire"/>
+  <text x="330" y="264" text-anchor="middle" class="tsmall">OUT (analog)</text>
+
+  <!-- Pot (CT) -->
+  <rect x="40" y="330" width="200" height="80" rx="6" class="box"/>
+  <text x="140" y="352" text-anchor="middle" class="tb">Potansiyometre (ct)</text>
+  <text x="140" y="370" text-anchor="middle" class="tsmall">CT + burden direnci yerine</text>
+  <text x="52" y="392" class="tsmall">VCC → +3V3  ·  GND → GND</text>
+  <line x1="240" y1="370" x2="420" y2="370" class="wire"/>
+  <text x="330" y="364" text-anchor="middle" class="tsmall">SIG (0-3.3 V)</text>
+
+  <!-- LDR -->
+  <rect x="40" y="430" width="200" height="80" rx="6" class="box"/>
+  <text x="140" y="452" text-anchor="middle" class="tb">LDR modülü (ldr)</text>
+  <text x="140" y="470" text-anchor="middle" class="tsmall">optik ark flaş (ışık azaldıkça ↑)</text>
+  <text x="52" y="492" class="tsmall">VCC → +3V3  ·  GND → GND</text>
+  <line x1="240" y1="470" x2="420" y2="470" class="wire"/>
+  <text x="330" y="464" text-anchor="middle" class="tsmall">AO (analog)</text>
+
+  <!-- Mic -->
+  <rect x="40" y="530" width="200" height="80" rx="6" class="box"/>
+  <text x="140" y="552" text-anchor="middle" class="tb">Ses sensörü (mic)</text>
+  <text x="140" y="570" text-anchor="middle" class="tsmall">akustik / kısmi deşarj göstergesi</text>
+  <text x="52" y="592" class="tsmall">VCC → +3V3  ·  GND → GND</text>
+  <line x1="240" y1="570" x2="420" y2="570" class="wire"/>
+  <text x="330" y="564" text-anchor="middle" class="tsmall">AOUT (analog, AC)</text>
+
+  <!-- power nets left -->
+  <line x1="420" y1="660" x2="360" y2="660" class="pwr"/>
+  <text x="352" y="664" text-anchor="end" class="tb" fill="#b42318" style="fill:#b42318">+3V3 rayı → tüm sensör VCC</text>
+  <line x1="420" y1="690" x2="360" y2="690" class="gnd"/>
+  <text x="352" y="694" text-anchor="end" class="tb">GND rayı → tüm sensör GND</text>
+
+  <!-- ===== right: outputs ===== -->
+  <!-- Green LED -->
+  <line x1="700" y1="170" x2="800" y2="170" class="wire"/>
+  <rect x="800" y="158" width="50" height="24" class="box"/>
+  <text x="825" y="175" text-anchor="middle" class="tsmall">330 Ω</text>
+  <line x1="850" y1="170" x2="900" y2="170" class="wire"/>
+  <polygon points="900,155 900,185 925,170" class="box" style="fill:#d1fadf"/>
+  <line x1="925" y1="155" x2="925" y2="185" class="wire"/>
+  <line x1="925" y1="170" x2="985" y2="170" class="wire"/>
+  <line x1="985" y1="170" x2="985" y2="200" class="gnd"/>
+  <line x1="972" y1="200" x2="998" y2="200" class="gnd"/>
+    <text x="900" y="142" class="tb">LED_OK</text>
+  <text x="900" y="126" class="tsmall">yeşil: gönderim kabul edildi</text>
+
+  <!-- Red LED -->
+  <line x1="700" y1="270" x2="800" y2="270" class="wire"/>
+  <rect x="800" y="258" width="50" height="24" class="box"/>
+  <text x="825" y="275" text-anchor="middle" class="tsmall">330 Ω</text>
+  <line x1="850" y1="270" x2="900" y2="270" class="wire"/>
+  <polygon points="900,255 900,285 925,270" class="box" style="fill:#fee4e2"/>
+  <line x1="925" y1="255" x2="925" y2="285" class="wire"/>
+  <line x1="925" y1="270" x2="985" y2="270" class="wire"/>
+  <line x1="985" y1="270" x2="985" y2="300" class="gnd"/>
+  <line x1="972" y1="300" x2="998" y2="300" class="gnd"/>
+    <text x="900" y="242" class="tb">LED_ALARM</text>
+  <text x="900" y="226" class="tsmall">kırmızı: kritik bant</text>
+
+  <!-- Button -->
+  <line x1="700" y1="370" x2="880" y2="370" class="wire"/>
+  <circle cx="880" cy="370" r="4" fill="#1f2933"/>
+  <line x1="880" y1="370" x2="920" y2="354" class="wire"/>
+  <circle cx="930" cy="370" r="4" fill="#1f2933"/>
+  <line x1="930" y1="370" x2="985" y2="370" class="wire"/>
+  <line x1="985" y1="370" x2="985" y2="400" class="gnd"/>
+  <line x1="972" y1="400" x2="998" y2="400" class="gnd"/>
+    <text x="780" y="352" class="tb">BTN (SCENARIO)</text>
+  <text x="780" y="338" class="tsmall">iç pull-up, basınca GND'ye çeker</text>
+
+  <!-- UART -->
+  <rect x="800" y="440" width="260" height="60" rx="6" class="box"/>
+  <text x="930" y="465" text-anchor="middle" class="tb">USB-UART / seri monitör</text>
+  <text x="930" y="484" text-anchor="middle" class="tsmall">115200 bps, log ve teşhis çıktısı</text>
+  <line x1="700" y1="470" x2="800" y2="470" class="wire"/>
+
+  <!-- Power -->
+  <rect x="800" y="540" width="260" height="70" rx="6" class="box"/>
+  <text x="930" y="565" text-anchor="middle" class="tb">USB 5 V (yalnızca demo)</text>
+  <text x="930" y="584" text-anchor="middle" class="tsmall">kart üstü regülatör 5 V → 3V3</text>
+  <text x="930" y="600" text-anchor="middle" class="tsmall">saha: izole DIN-ray PSU</text>
+  <line x1="700" y1="570" x2="800" y2="570" class="pwr"/>
+
+  <!-- GND right -->
+  <line x1="700" y1="690" x2="985" y2="690" class="gnd"/>
+  <text x="1090" y="712" text-anchor="end" class="tsmall">GND.2 → LED katotları ve buton (toprak sembolü = GND)</text>
+
+  <!-- legend -->
+  <text x="40" y="738" class="tsmall">Kesikli çizgi: Wokwi'de yok, gerçek DHT22 çıplak çipinde önerilen ekleme. Tüm analog girişler ADC1'dedir (ADC2, Wi-Fi ile kullanılamaz).</text>
+</svg>

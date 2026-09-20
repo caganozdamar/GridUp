@@ -1,0 +1,33 @@
+menu "GRID UP Field Module"
+
+    config GRIDUP_WIFI_SSID
+        string "Wi-Fi SSID"
+        default "Wokwi-GUEST"
+        help
+            "Wokwi-GUEST" is the open network of the Wokwi simulator.
+
+    config GRIDUP_WIFI_PASSWORD
+        string "Wi-Fi password (empty for an open network)"
+        default ""
+
+    config GRIDUP_API_BASE_URL
+        string "GRID UP API base URL"
+        default "http://host.wokwi.internal:3000"
+        help
+            Address of the on-premise GRID UP API, without a trailing slash.
+            host.wokwi.internal is how the Wokwi Private Gateway exposes the
+            host computer; on a real board use the API server's LAN address.
+
+    config GRIDUP_PANEL_CODE
+        string "Panel code this module is installed in"
+        default "PANO-003"
+
+    config GRIDUP_SAMPLE_INTERVAL_MS
+        int "Sampling interval (ms)"
+        default 2000
+        range 2000 60000
+        help
+            The DHT22 cannot be read more often than every 2 seconds, and the
+            risk engine's trend thresholds are calibrated for 2 seconds.
+
+endmenu

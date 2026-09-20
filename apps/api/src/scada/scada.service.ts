@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, SensorType } from '@prisma/client';
+import { AnomalyType, Prisma, SensorType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import type { ScadaPanelSnapshot } from './scada-panel-snapshot.model.js';
 
@@ -51,7 +51,7 @@ export class ScadaService {
         _count: { _all: true },
       }),
       this.prisma.anomaly.groupBy({
-        by: ['panelId'],
+        by: ['panelId', 'type'],
         where: { panelId: { in: panelIds }, resolvedAt: null },
         _count: { _all: true },
       }),
@@ -60,7 +60,14 @@ export class ScadaService {
     const latestReadingBySensorId = new Map(latestReadings.map((row) => [row.sensorId, row]));
     const riskScoreByPanelId = new Map(latestRiskScores.map((row) => [row.panelId, row]));
     const activeAlarmCountByPanelId = new Map(activeAlarmGroups.map((row) => [row.panelId, row._count._all]));
-    const activeAnomalyCountByPanelId = new Map(activeAnomalyGroups.map((row) => [row.panelId, row._count._all]));
+    const activeAnomalyCountByPanelId = new Map<string, number>();
+    const activeAnomalyTypesByPanelId = new Map<string, Set<AnomalyType>>();
+    for (const row of activeAnomalyGroups) {
+      activeAnomalyCountByPanelId.set(row.panelId, (activeAnomalyCountByPanelId.get(row.panelId) ?? 0) + row._count._all);
+      const types = activeAnomalyTypesByPanelId.get(row.panelId) ?? new Set<AnomalyType>();
+      types.add(row.type);
+      activeAnomalyTypesByPanelId.set(row.panelId, types);
+    }
 
     const sensorsByPanelId = new Map<string, typeof sensors>();
     for (const sensor of sensors) {
@@ -76,6 +83,8 @@ export class ScadaService {
       let cableTemperature: number | null = null;
       let humidity: number | null = null;
       let current: number | null = null;
+      let arcFlash: number | null = null;
+      let acoustic: number | null = null;
       let lastReadingAt: Date | null = null;
 
       for (const sensor of panelSensors) {
@@ -99,6 +108,12 @@ export class ScadaService {
           case SensorType.CURRENT:
             current = reading.value;
             break;
+          case SensorType.ARC_FLASH:
+            arcFlash = reading.value;
+            break;
+          case SensorType.ACOUSTIC:
+            acoustic = reading.value;
+            break;
         }
       }
 
@@ -115,6 +130,10 @@ export class ScadaService {
         cableTemperature,
         humidity,
         current,
+        arcFlash,
+        acoustic,
+        arcFlashActive: activeAnomalyTypesByPanelId.get(panel.id)?.has(AnomalyType.ARC_FLASH) ?? false,
+        partialDischargeActive: activeAnomalyTypesByPanelId.get(panel.id)?.has(AnomalyType.PARTIAL_DISCHARGE) ?? false,
         activeAlarm: activeAlarmCount > 0,
         activeAnomalyCount: activeAnomalyCountByPanelId.get(panel.id) ?? 0,
         lastReadingAt: lastReadingAt ? lastReadingAt.toISOString() : null,

@@ -37,6 +37,10 @@ export interface RiskComponents {
   current: number;
   humidity: number;
   trend: number;
+  /** Ark flash riski (0-100). Guvenlik-kritik oldugu icin agirlikli toplama girmez, skora taban (floor) olur. */
+  arcFlash: number;
+  /** Akustik / kismi desarj riski (0-100). Agirlikli toplama girmez, skora taban (floor) olur. */
+  acoustic: number;
 }
 
 export interface RiskExplanation {

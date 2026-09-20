@@ -1,0 +1,6 @@
+# The module runs the HTTP client from the main task; the default 3.5 KB stack is too small.
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# Wi-Fi + HTTP client leave only ~11% free in the default 1 MB app partition.
+# Use the 1.5 MB layout (still fits the 2 MB flash the simulator/most boards have).
+CONFIG_PARTITION_TABLE_SINGLE_APP_LARGE=y

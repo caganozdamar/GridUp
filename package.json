@@ -16,6 +16,7 @@
     "scada:read": "npm run scada:read --workspace=apps/scada-gateway --",
     "demo:normal": "node scripts/demo.mjs NORMAL",
     "demo:critical": "node scripts/demo.mjs COMBINED_FAILURE PANO-003",
+    "demo:arc": "node scripts/demo.mjs ARC_FLASH PANO-003",
     "build": "npm run build --workspaces --if-present",
     "build:shared": "npm run build --workspace=packages/shared",
     "build:api": "npm run build --workspace=apps/api",
