@@ -83,6 +83,9 @@ services:
         # Private network icinde API'nin adresi (tarayicidan erisim host
         # uzerinden oldugu icin host/OT-network adresi kullanilir).
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3000}
+        # SCADA ekrani, gateway'in read-only register ucunu okur (tarayicidan
+        # erisildigi icin host/OT-network adresi).
+        VITE_SCADA_GATEWAY_URL: ${VITE_SCADA_GATEWAY_URL:-http://localhost:1580}
     container_name: grid-up-onprem-web
     restart: unless-stopped
     depends_on:
@@ -105,12 +108,19 @@ services:
       MODBUS_TCP_PORT: ${MODBUS_TCP_PORT:-1502}
       SCADA_REFRESH_INTERVAL_MS: ${SCADA_REFRESH_INTERVAL_MS:-2000}
       SCADA_DATA_STALE_MS: ${SCADA_DATA_STALE_MS:-10000}
+      # Dashboard'un SCADA ekrani icin read-only register gorunumu (yalnizca GET).
+      SCADA_HTTP_HOST: 0.0.0.0
+      SCADA_HTTP_PORT: ${SCADA_HTTP_PORT:-1580}
+      SCADA_HTTP_ALLOWED_ORIGIN: ${SCADA_HTTP_ALLOWED_ORIGIN:-*}
     ports:
       # OT/SCADA private network'undeki SCADA yazilimi/PLC'lerin erisebilmesi
       # icin acilir. Production'da bu port sadece trusted OT network'e
       # (firewall allow-list ile) acilmalidir, internet'e ASLA expose
       # edilmemelidir (bkz. docs/on-premise-architecture.md #production-considerations).
       - '${MODBUS_TCP_PORT:-1502}:${MODBUS_TCP_PORT:-1502}'
+      # Dashboard'un SCADA ekrani icin (salt-okunur JSON). Modbus portu gibi
+      # yalnizca private/OT network'e acilmalidir.
+      - '${SCADA_HTTP_PORT:-1580}:${SCADA_HTTP_PORT:-1580}'
     networks:
       - grid-up-onprem
 

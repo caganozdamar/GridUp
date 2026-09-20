@@ -2,21 +2,13 @@ import 'dotenv/config';
 import { createRequire } from 'module';
 import { loadConfig } from './config.js';
 import {
-  getBlockIndexForPanelCode,
-  getRegisterStartAddress,
-  getRegisterStartLabel,
-  MODBUS_BOOL,
-  MODBUS_DATA_QUALITY,
   EXTENDED_REGISTERS_PER_PANEL,
-  ExtendedRegisterOffset,
+  getBlockIndexForPanelCode,
   getExtendedRegisterStartAddress,
-  getExtendedRegisterStartLabel,
+  getRegisterStartAddress,
   REGISTERS_PER_PANEL,
-  RegisterOffset,
 } from './register-map.js';
-
-const RISK_LEVEL_NAMES = ['NORMAL', 'WARNING', 'HIGH', 'CRITICAL'];
-const PANEL_STATUS_NAMES = ['OFFLINE', 'ONLINE', 'MAINTENANCE'];
+import { describePanelRegisters } from './register-view.js';
 
 /**
  * modbus-serial'in CJS default export'u, bu ESM paketinde nodenext'in
@@ -36,10 +28,6 @@ interface ModbusClient {
 const require = createRequire(import.meta.url);
 const ModbusRTU = require('modbus-serial') as new () => ModbusClient;
 
-function formatBool(value: number): string {
-  return value === MODBUS_BOOL.YES ? 'YES' : 'NO';
-}
-
 function pad(label: string, width = 20): string {
   return label.padEnd(width, ' ');
 }
@@ -51,7 +39,6 @@ async function main(): Promise<void> {
 
   const blockIndex = getBlockIndexForPanelCode(panelCode);
   const startAddress = getRegisterStartAddress(blockIndex);
-  const startLabel = getRegisterStartLabel(blockIndex);
 
   const client = new ModbusRTU();
   await client.connectTCP(host, { port: config.modbusTcpPort });
@@ -64,18 +51,13 @@ async function main(): Promise<void> {
       getExtendedRegisterStartAddress(blockIndex),
       EXTENDED_REGISTERS_PER_PANEL,
     );
-    const extendedLabel = getExtendedRegisterStartLabel(blockIndex);
 
-    const riskScore = data[RegisterOffset.RISK_SCORE];
-    const riskLevel = data[RegisterOffset.RISK_LEVEL];
-    const ambient = data[RegisterOffset.AMBIENT_TEMPERATURE_X10] / 10;
-    const cable = data[RegisterOffset.CABLE_TEMPERATURE_X10] / 10;
-    const humidity = data[RegisterOffset.HUMIDITY_X10] / 10;
-    const current = data[RegisterOffset.CURRENT_X10] / 10;
-    const activeAlarm = data[RegisterOffset.ACTIVE_ALARM];
-    const panelStatus = data[RegisterOffset.PANEL_STATUS];
-    const anomalyCount = data[RegisterOffset.ACTIVE_ANOMALY_COUNT];
-    const dataQuality = data[RegisterOffset.DATA_QUALITY];
+    const rows = describePanelRegisters((address) => {
+      const coreStart = getRegisterStartAddress(blockIndex);
+      const extStart = getExtendedRegisterStartAddress(blockIndex);
+      if (address >= extStart) return extended[address - extStart] ?? 0;
+      return data[address - coreStart] ?? 0;
+    }, blockIndex);
 
     const separator = '-'.repeat(40);
     console.log(separator);
@@ -83,33 +65,11 @@ async function main(): Promise<void> {
     console.log('');
     console.log(`Panel: ${panelCode}`);
     console.log('');
-    console.log(`${startLabel + 0} ${pad('Risk Score')} : ${riskScore}`);
-    console.log(
-      `${startLabel + 1} ${pad('Risk Level')} : ${riskLevel} (${RISK_LEVEL_NAMES[riskLevel] ?? 'UNKNOWN'})`,
-    );
-    console.log(`${startLabel + 2} ${pad('Ambient Temperature')} : ${ambient.toFixed(1)} °C`);
-    console.log(`${startLabel + 3} ${pad('Cable Temperature')} : ${cable.toFixed(1)} °C`);
-    console.log(`${startLabel + 4} ${pad('Humidity')} : ${humidity.toFixed(1)} %`);
-    console.log(`${startLabel + 5} ${pad('Current')} : ${current.toFixed(1)} A`);
-    console.log(`${startLabel + 6} ${pad('Active Alarm')} : ${formatBool(activeAlarm)}`);
-    console.log(`${startLabel + 7} ${pad('Panel Status')} : ${PANEL_STATUS_NAMES[panelStatus] ?? 'UNKNOWN'}`);
-    console.log(`${startLabel + 8} ${pad('Active Anomalies')} : ${anomalyCount}`);
-    console.log(
-      `${startLabel + 9} ${pad('Data Quality')} : ${dataQuality === MODBUS_DATA_QUALITY.VALID ? 'VALID' : 'INVALID'}`,
-    );
-    console.log('');
-    console.log(
-      `${extendedLabel + 0} ${pad('Arc Flash')} : ${(extended[ExtendedRegisterOffset.ARC_FLASH_X10] / 10).toFixed(1)} %`,
-    );
-    console.log(
-      `${extendedLabel + 1} ${pad('Acoustic')} : ${(extended[ExtendedRegisterOffset.ACOUSTIC_X10] / 10).toFixed(1)} dB`,
-    );
-    console.log(
-      `${extendedLabel + 2} ${pad('Arc Flash Active')} : ${formatBool(extended[ExtendedRegisterOffset.ARC_FLASH_ACTIVE])}`,
-    );
-    console.log(
-      `${extendedLabel + 3} ${pad('Partial Discharge')} : ${formatBool(extended[ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE])}`,
-    );
+    rows.forEach((row, index) => {
+      // Cekirdek ve genisletilmis bloklar bos bir satirla ayrilir.
+      if (index > 0 && row.group !== rows[index - 1].group) console.log('');
+      console.log(`${row.label} ${pad(row.name)} : ${row.display}`);
+    });
     console.log(separator);
   } finally {
     client.close(() => undefined);
