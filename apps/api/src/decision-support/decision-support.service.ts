@@ -89,7 +89,7 @@ export class DecisionSupportService {
         where: { panelId },
         orderBy: { createdAt: 'desc' },
         take: TIMELINE_RAW_FETCH_CAP,
-        select: { id: true, severity: true, title: true, createdAt: true, resolvedAt: true },
+        select: { id: true, severity: true, title: true, createdAt: true, acknowledgedAt: true, resolvedAt: true },
       }),
     ]);
 

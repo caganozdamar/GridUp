@@ -17,6 +17,8 @@ COPY . .
 # the API service's private DNS name/port (see docker-compose.onprem.yml).
 ARG VITE_API_BASE_URL=http://localhost:3000
 ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ARG VITE_SCADA_GATEWAY_URL=http://localhost:1580
+ENV VITE_SCADA_GATEWAY_URL=$VITE_SCADA_GATEWAY_URL
 RUN npm run build:shared && npm run build --workspace=apps/web
 
 FROM nginx:alpine AS runtime

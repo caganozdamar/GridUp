@@ -19,6 +19,9 @@ Final sunumdan hemen önce, sırasıyla kontrol edin.
 - [ ] Browser console temiz (F12 → Console'da kırmızı hata yok)
 - [ ] `npm run scada:read -- PANO-003` client'ı çalışıyor
 - [ ] Demo critical komutu hazır (`npm run demo:critical` — ayrı bir terminalde çalıştırmaya hazır, henüz çalıştırılmamış)
+- [ ] SCADA sayfası açılıyor (`http://localhost:5173/scada`; gateway'in register ucu `http://localhost:1580/registers` yanıt veriyor)
+- [ ] Demoya başlamadan önce veri akıyor: simülatör çalışmıyorsa 60 sn sonra tüm panolarda **MODULE OFFLINE** alarmı açılır (bilerek; `npm run demo:normal` ile kendiliğinden çözülür)
+- [ ] Demoyu tekrar tekrar prova ediyorsanız `NOTIFICATION_COOLDOWN_MS=0` ile API'yi başlatın: varsayılan 2 dk cooldown, aynı panodaki ikinci aynı seviyeli alarmın SMS'ini bastırır
 - [ ] Firmware derlenmiş (`firmware/esp32/build/gridup-field-module.elf` var; yoksa `idf.py build`, bkz. [../firmware/esp32/README.md](../firmware/esp32/README.md))
 - [ ] Wokwi **kapalı** (demo:critical ile aynı panoya yazar; STEP 8'de açılacak)
 - [ ] İsteğe bağlı: bildirim gateway gösterimi için `npm run mock:sms` hazır (bkz. [notification-policy.md](notification-policy.md))

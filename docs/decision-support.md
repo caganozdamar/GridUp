@@ -172,6 +172,12 @@ procedures."*
 
 ## C) Sensor / Panel Data Health
 
+> **Güncel not.** Data Health başlangıçta yalnızca bir göstergeydi. Artık
+> `ModuleHealthService`, bir panonun en yeni okumasının yaşını 60 sn aşınca
+> `MODULE_OFFLINE` alarmı açar ve bildirim gönderir (bkz.
+> [notification-policy.md](notification-policy.md)). Rozetin kendisi (10 sn eşiği)
+> değişmemiştir.
+
 Kaynak: [`data-health.util.ts`](../apps/api/src/decision-support/data-health.util.ts),
 servis: [`decision-support.service.ts`](../apps/api/src/decision-support/decision-support.service.ts).
 

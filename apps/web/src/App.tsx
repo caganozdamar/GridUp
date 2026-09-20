@@ -4,6 +4,7 @@ import { OverviewPage } from './pages/OverviewPage';
 import { PanelsPage } from './pages/PanelsPage';
 import { PanelDetailPage } from './pages/PanelDetailPage';
 import { AlarmsPage } from './pages/AlarmsPage';
+import { ScadaPage } from './pages/ScadaPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="panels" element={<PanelsPage />} />
           <Route path="panels/:id" element={<PanelDetailPage />} />
           <Route path="alarms" element={<AlarmsPage />} />
+          <Route path="scada" element={<ScadaPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

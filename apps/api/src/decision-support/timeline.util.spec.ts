@@ -62,6 +62,21 @@ describe('deriveTimeline', () => {
     expect(events.filter((event) => event.channel === NotificationChannel.SMS)).toHaveLength(1);
   });
 
+  it('adds an acknowledge event between the alarm being created and resolved', () => {
+    const alarms: AlarmRow[] = [
+      { severity: Severity.HIGH, title: 'Elevated overheating risk detected', createdAt: at(0), acknowledgedAt: at(5), resolvedAt: at(20) },
+    ];
+
+    const events = deriveTimeline({ riskScores: [], anomalies: [], alarms, notifications: [] }, 30);
+
+    expect(events.map((event) => event.type)).toEqual([
+      TimelineEventType.ALARM_RESOLVED,
+      TimelineEventType.ALARM_ACKNOWLEDGED,
+      TimelineEventType.ALARM_CREATED,
+    ]);
+    expect(events[1].title).toBe('Alarm acknowledged');
+  });
+
   it('orders all events newest-first regardless of source table', () => {
     const riskScores: RiskScoreRow[] = [
       { score: 10, level: RiskLevel.NORMAL, calculatedAt: at(0) },

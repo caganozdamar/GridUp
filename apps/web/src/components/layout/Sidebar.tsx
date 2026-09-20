@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: '/', label: 'Overview', end: true },
   { to: '/panels', label: 'Panels', end: false },
   { to: '/alarms', label: 'Alarms', end: false },
+  { to: '/scada', label: 'SCADA', end: false },
 ];
 
 export function Sidebar() {

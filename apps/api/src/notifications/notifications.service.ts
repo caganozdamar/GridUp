@@ -1,8 +1,14 @@
 import { Inject, Injectable, Logger, NotFoundException, type OnModuleDestroy } from '@nestjs/common';
-import { Alarm, NotificationChannel, NotificationStatus, Prisma } from '@prisma/client';
+import { Alarm, NotificationChannel, NotificationStatus, Prisma, Severity } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NOTIFICATION_PROVIDER, type NotificationProvider } from './notification-provider.interface.js';
-import { SEVERITY_CHANNEL_MAP, deliveryConfig, dispatchMode, recipientsForChannel } from './notifications.config.js';
+import {
+  SEVERITY_CHANNEL_MAP,
+  deliveryConfig,
+  dispatchMode,
+  notificationCooldownMs,
+  recipientsForChannel,
+} from './notifications.config.js';
 import { maskRecipient } from './mask-recipient.util.js';
 import { buildNotificationMessage, type AlarmNotificationContext } from './notification-message.util.js';
 
@@ -11,7 +17,18 @@ const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 export interface AlarmRiskContext {
   score: number;
   reasons: string[];
+  // MODULE_OFFLINE alarmlari icin: verinin kac ms'dir kesik oldugu.
+  silentForMs?: number;
 }
+
+// Cooldown karsilastirmasi icin: ayni ya da daha yuksek seviyede yakin zamanda
+// gonderilmis bildirim varsa yenisi bastirilir.
+const SEVERITIES_AT_LEAST: Record<Severity, Severity[]> = {
+  [Severity.LOW]: [Severity.LOW, Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL],
+  [Severity.MEDIUM]: [Severity.MEDIUM, Severity.HIGH, Severity.CRITICAL],
+  [Severity.HIGH]: [Severity.HIGH, Severity.CRITICAL],
+  [Severity.CRITICAL]: [Severity.CRITICAL],
+};
 
 const NOTIFICATION_LIST_INCLUDE = {
   alarm: {
@@ -64,10 +81,18 @@ export class NotificationsService implements OnModuleDestroy {
         severity: alarm.severity,
         score: riskContext.score,
         reasons: riskContext.reasons,
+        kind: alarm.kind,
+        silentForMs: riskContext.silentForMs,
       };
 
       const deliveries: Promise<void>[] = [];
       for (const channel of channels) {
+        if (await this.isInCooldown(alarm, channel)) {
+          this.logger.warn(
+            `${channel} for ${panel.code} (${alarm.kind}, ${alarm.severity}) suppressed: a notification of at least this severity was already sent within the cooldown`,
+          );
+          continue;
+        }
         for (const recipient of recipientsForChannel(channel)) {
           const notification = await this.createPending(alarm.id, channel, recipient, context);
           if (notification) deliveries.push(this.track(this.deliver(notification.id, channel, recipient, notification.message)));
@@ -102,6 +127,31 @@ export class NotificationsService implements OnModuleDestroy {
       where: { alarmId },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  // Ayni pano + ayni alarm turu + ayni kanal icin, cooldown suresi icinde ayni
+  // ya da daha yuksek seviyede bir bildirim zaten gonderildiyse (veya
+  // gonderiliyorsa) true. FAILED kayitlar sayilmaz: ulasmamis bir bildirimin
+  // yerine yenisi denenmelidir.
+  private async isInCooldown(alarm: Alarm, channel: NotificationChannel): Promise<boolean> {
+    const cooldownMs = notificationCooldownMs();
+    if (cooldownMs === 0) return false;
+
+    const recent = await this.prisma.notification.findFirst({
+      where: {
+        channel,
+        status: { in: [NotificationStatus.SENT, NotificationStatus.PENDING] },
+        createdAt: { gte: new Date(Date.now() - cooldownMs) },
+        alarm: {
+          id: { not: alarm.id },
+          panelId: alarm.panelId,
+          kind: alarm.kind,
+          severity: { in: SEVERITIES_AT_LEAST[alarm.severity] },
+        },
+      },
+      select: { id: true },
+    });
+    return recent !== null;
   }
 
   // Tum arka plan gonderimlerinin bitmesini bekler (kapanis ve testler icin).

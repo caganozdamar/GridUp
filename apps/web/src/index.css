@@ -609,6 +609,20 @@ svg {
   border: 1px solid var(--border);
 }
 
+.kind-tag {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  border-radius: 4px;
+  color: var(--text-secondary);
+  background: var(--bg-panel-alt);
+  border: 1px solid var(--border-strong);
+  vertical-align: middle;
+}
+
 .status-pill.online,
 .status-pill.active {
   color: var(--status-normal);
@@ -1496,3 +1510,52 @@ svg {
     padding: 20px 16px 32px;
   }
 }
+
+/* ---- SCADA / Modbus ekrani ---- */
+.scada-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.scada-strip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 12px 14px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.scada-strip-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mono {
+  font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 12.5px;
+}
+
+.scada-row {
+  cursor: pointer;
+}
+
+.scada-row.selected {
+  background: var(--bg-panel-alt);
+}
+
+.scada-group-start td {
+  border-top: 2px solid var(--border-strong);
+}
+
+.scada-footnote {
+  margin-top: 8px;
+}
+

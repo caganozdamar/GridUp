@@ -2,6 +2,7 @@ import 'dotenv/config';
 import { ScadaApiClient } from './api-client.js';
 import { loadConfig } from './config.js';
 import { logApiRecovered, logApiUnreachable, logSnapshotUpdated, logUnsupportedPanel } from './logger.js';
+import { startHttpServer, type HttpServerHandle } from './http-server.js';
 import { startModbusServer } from './modbus-server.js';
 import { RegisterStore } from './register-store.js';
 
@@ -21,8 +22,27 @@ async function main(): Promise<void> {
   );
 
   let lastFetchOk = true;
+  let lastApiSuccessAt: number | null = null;
   let stopped = false;
   let timer: NodeJS.Timeout | undefined;
+
+  let httpServer: HttpServerHandle | undefined;
+  if (config.httpPort !== 0) {
+    httpServer = await startHttpServer(
+      store,
+      {
+        apiBaseUrl: config.apiBaseUrl,
+        modbusPort: config.modbusTcpPort,
+        staleMs: config.staleMs,
+        apiReachable: () => lastFetchOk,
+        lastApiSuccessAt: () => lastApiSuccessAt,
+      },
+      { host: config.httpHost, port: config.httpPort, allowedOrigin: config.httpAllowedOrigin },
+    );
+    console.log(
+      `[SCADA] Register view (read-only HTTP for the dashboard) on http://${config.httpHost}:${httpServer.port}/registers`,
+    );
+  }
 
   async function tick(): Promise<void> {
     try {
@@ -36,6 +56,7 @@ async function main(): Promise<void> {
         logApiRecovered();
       }
       lastFetchOk = true;
+      lastApiSuccessAt = Date.now();
     } catch (error) {
       if (lastFetchOk) {
         logApiUnreachable((error as Error).message);
@@ -64,6 +85,7 @@ async function main(): Promise<void> {
     if (timer) clearTimeout(timer);
     console.log('\n[SCADA] Shutting down gracefully...');
     await modbusServer.close();
+    await httpServer?.close();
     process.exit(0);
   }
 

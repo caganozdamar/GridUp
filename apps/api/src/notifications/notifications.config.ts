@@ -48,6 +48,16 @@ export function deliveryConfig() {
   };
 }
 
+// Ayni pano icin, ayni ya da daha dusuk seviyede bir alarm bildirimi bu sure
+// (ms) icinde tekrar gonderilmez. Seviye YUKSELIRSE (HIGH -> CRITICAL) cooldown
+// uygulanmaz: kotulesen durum her zaman duyurulur. 0 = cooldown kapali
+// (ornegin demo provalarinda). Varsayilan 2 dk, bir demoyu tekrar calistirmaya
+// yetecek kadar kisadir.
+export function notificationCooldownMs(): number {
+  const value = Number.parseInt(process.env.NOTIFICATION_COOLDOWN_MS ?? '', 10);
+  return Number.isFinite(value) && value >= 0 ? value : 120_000;
+}
+
 export function gatewayConfig() {
   return {
     url: process.env.NOTIFICATION_GATEWAY_URL ?? '',

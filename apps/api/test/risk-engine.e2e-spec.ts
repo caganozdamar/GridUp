@@ -150,7 +150,7 @@ describe('RiskEngineService (e2e, real DB)', () => {
     }
   });
 
-  it('resolves the active alarm once risk drops back to normal', async () => {
+  it('resolves the active alarm only after risk stayed normal for several analyses (hysteresis)', async () => {
     const ctx = await createTestPanel('RESOLVE-ALARM');
     try {
       await feedReadings(ctx.cableSensor.id, RISING_CABLE_TEMPS);
@@ -164,6 +164,15 @@ describe('RiskEngineService (e2e, real DB)', () => {
       // of 10 readings fully replaces the failure-window data).
       await feedReadings(ctx.cableSensor.id, Array(10).fill(38));
       await feedReadings(ctx.currentSensor.id, Array(10).fill(85));
+
+      // Histerezis: varsayilan olarak 5 ARDISIK normal analiz gerekir. 4 analiz
+      // sonunda alarm hala aciktir; tek bir dusuk okuma alarmi kapatmaz.
+      for (let tick = 0; tick < 4; tick++) {
+        await riskEngine.analyzePanels([ctx.panel.id]);
+      }
+      const afterFour = await prisma.alarm.findUnique({ where: { id: active!.id } });
+      expect(afterFour?.status).toBe('ACTIVE');
+
       await riskEngine.analyzePanels([ctx.panel.id]);
 
       const stillActive = await prisma.alarm.findFirst({ where: { panelId: ctx.panel.id, status: 'ACTIVE' } });
