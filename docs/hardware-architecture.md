@@ -1,9 +1,10 @@
 # Hardware Block Diagram — Field Module Konsepti (Aşama 8)
 
 Bu doküman, GRID UP Field Module'ün donanım blok diyagramını gösterir.
-**Bu aşamada gerçek bir PCB/şematik tasarlanmamıştır**; aşağıdaki diyagram,
-sistemin hangi fonksiyonel bloklardan oluşacağını gösteren bir konsept
-diyagramıdır (bkz. [field-module.md](field-module.md) "Önemli çerçeve").
+Aşağıdaki diyagram, sistemin hangi fonksiyonel bloklardan oluşacağını gösteren
+bir konsept diyagramıdır. Demo prototipin pin/bileşen düzeyindeki devre şeması
+[electronic-design.md](electronic-design.md) içindedir; özel bir PCB yerleşimi
+çizilmemiştir (bkz. [field-module.md](field-module.md) "Önemli çerçeve").
 
 ## Blok diyagram
 
@@ -92,3 +93,5 @@ haberleşme (kablolama kabul edilebilirse).
 | [field-module.md](field-module.md) | Genel Field Module konsepti |
 | [field-installation.md](field-installation.md) | Enclosure ve fiziksel kurulum |
 | [bom.md](bom.md) | Bu bloklara karşılık gelen demo/production bileşen listesi |
+| [electronic-design.md](electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
+| [firmware-flow.md](firmware-flow.md) | Firmware akış diyagramı |

@@ -13,12 +13,14 @@ enum PanelStatus {
   MAINTENANCE
 }
 
-// Not: PARTIAL_DISCHARGE, ARC_FLASH, ACOUSTIC gelecekte buraya eklenebilir.
+// ARC_FLASH: optik yogunluk (%). ACOUSTIC: ses seviyesi (dB, kismi desarj gostergesi).
 enum SensorType {
   AMBIENT_TEMPERATURE
   CABLE_TEMPERATURE
   HUMIDITY
   CURRENT
+  ARC_FLASH
+  ACOUSTIC
 }
 
 enum RiskLevel {
@@ -34,6 +36,8 @@ enum AnomalyType {
   HIGH_HUMIDITY
   OVERCURRENT
   MULTI_SENSOR_RISK
+  ARC_FLASH
+  PARTIAL_DISCHARGE
 }
 
 enum Severity {

@@ -1,5 +1,12 @@
-import { encodePanelRegisters } from './encode.js';
-import { getBlockIndexForPanelCode, getRegisterStartAddress, REGISTERS_PER_PANEL, TOTAL_HOLDING_REGISTERS } from './register-map.js';
+import { encodeExtendedRegisters, encodePanelRegisters } from './encode.js';
+import {
+  EXTENDED_REGISTERS_PER_PANEL,
+  getBlockIndexForPanelCode,
+  getExtendedRegisterStartAddress,
+  getRegisterStartAddress,
+  REGISTERS_PER_PANEL,
+  TOTAL_HOLDING_REGISTERS,
+} from './register-map.js';
 import type { ScadaPanelSnapshot } from './types.js';
 
 /**
@@ -45,6 +52,7 @@ export class RegisterStore {
       const start = getRegisterStartAddress(blockIndex);
       const values = encodePanelRegisters(snapshot, now, staleMs);
       this.registers.set(values, start);
+      this.registers.set(encodeExtendedRegisters(snapshot), getExtendedRegisterStartAddress(blockIndex));
     }
   }
 
@@ -77,6 +85,6 @@ export class RegisterStore {
   }
 
   get usedRegisterCount(): number {
-    return this.snapshotsByPanelCode.size * REGISTERS_PER_PANEL;
+    return this.snapshotsByPanelCode.size * (REGISTERS_PER_PANEL + EXTENDED_REGISTERS_PER_PANEL);
   }
 }

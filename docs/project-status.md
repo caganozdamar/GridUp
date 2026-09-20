@@ -25,9 +25,10 @@ amacıdır.
 | Operational Metrics | IMPLEMENTED | Aşama 9 — `GET /metrics/operations`, gerçek DB aggregate'leri (Early Warnings/Critical Escalations/Notifications Delivered). Bkz. decision-support.md |
 | Physical field module | CONCEPT / NEXT HARDWARE STEP | Bkz. field-module.md; hiçbir gerçek donanım inşa edilmedi |
 | Real industrial sensors | NOT YET FIELD VALIDATED | Sensör sınıfları önerilmiştir (bkz. field-module.md), kesin model/vendor seçimi yapılmamıştır |
-| Partial discharge | FUTURE | `SensorType` enum'unda yok; yalnızca kod yorumunda gelecek notu var |
-| Arc flash sensing | FUTURE | Aynı şekilde — kod tabanında karşılığı yok |
-| Acoustic sensing | FUTURE | Aynı şekilde — kod tabanında karşılığı yok |
+| Arc flash detection (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ARC_FLASH`, `ARC_FLASH` anomalisi, skor tabanı (floor), Modbus 41001+ bloğu. Veri kaynağı: `apps/simulator` (`npm run demo:arc`, sentetik) — gerçek optik sensör doğrulanmadı |
+| Partial discharge / acoustic (backend) | IMPLEMENTED (SIMULATED SENSOR) | `SensorType.ACOUSTIC`, `PARTIAL_DISCHARGE` anomalisi, nem korelasyon bonusu. Akustik seviye (dB) bir **gösterge**dir; gerçek kısmi deşarj ölçümü (UHF/TEV/HFCT) değildir |
+| Field module firmware (C, ESP32) | RUNS IN WOKWI, NOT RUN ON REAL HARDWARE | `firmware/`: C çekirdeği + ESP-IDF HAL (Wi-Fi, HTTP, SNTP, DHT22, ADC). ESP-IDF v5.5.5 ile derlenir; çekirdek mantığı sahte HAL'le birim testli; Wokwi'de sensörleri okuyup yerel API'ye gönderir. Gerçek kartta ve gerçek sensörlerle denenmedi. Bkz. [firmware-flow.md](firmware-flow.md) |
+| Electronic design docs | DOCUMENTED (DEMO SCHEMATIC) | [electronic-design.md](electronic-design.md): devre şeması, pin ve bileşen tablosu. Özel PCB yerleşimi çizilmedi |
 | Real ADM/GDZ SCADA connection | NOT REQUIRED FOR HACKATHON / FUTURE FIELD PILOT | Gerçek SCADA sistemine bağlanılmadı; sadece Modbus TCP server prototipi çalışıyor |
 | Authentication | NOT IMPLEMENTED | Hackathon kapsamı dışı; production öncesi zorunlu (bkz. on-premise-architecture.md "Production Considerations") |
 | Public cloud / AWS / Azure / Firebase | NOT USED | Sistem tamamen on-premise/Docker Compose ile çalışır |

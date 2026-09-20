@@ -7,6 +7,8 @@ const SENSOR_DEFS: Array<{ suffix: string; name: string; type: SensorType; unit:
   { suffix: 'CABLE-TEMP', name: 'Cable Temperature', type: 'CABLE_TEMPERATURE', unit: '°C' },
   { suffix: 'HUM', name: 'Humidity', type: 'HUMIDITY', unit: '%' },
   { suffix: 'CURRENT', name: 'Current', type: 'CURRENT', unit: 'A' },
+  { suffix: 'ARC-FLASH', name: 'Arc Flash (optical)', type: 'ARC_FLASH', unit: '%' },
+  { suffix: 'ACOUSTIC', name: 'Acoustic / Partial Discharge', type: 'ACOUSTIC', unit: 'dB' },
 ];
 
 async function main() {

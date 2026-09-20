@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ACOUSTIC_RANGE,
   AMBIENT_RANGE,
+  ARC_FLASH_RANGE,
   CABLE_RANGE,
   CURRENT_RANGE,
   HUMIDITY_RANGE,
@@ -83,10 +85,14 @@ function isPositiveFiniteState(state: PanelSensorState): boolean {
     Number.isFinite(state.cableTemperature) &&
     Number.isFinite(state.humidity) &&
     Number.isFinite(state.current) &&
+    Number.isFinite(state.arcFlash) &&
+    Number.isFinite(state.acoustic) &&
     state.ambientTemperature > 0 &&
     state.cableTemperature > 0 &&
     state.humidity >= 0 &&
-    state.current > 0
+    state.current > 0 &&
+    state.arcFlash >= 0 &&
+    state.acoustic > 0
   );
 }
 
@@ -95,6 +101,8 @@ const BASELINE_STATE: PanelSensorState = {
   cableTemperature: 38,
   humidity: 45,
   current: 90,
+  arcFlash: 1,
+  acoustic: 40,
 };
 
 describe('nextPanelState (failure scenarios)', () => {
@@ -170,6 +178,7 @@ describe('nextPanelState (failure scenarios)', () => {
       SimulationScenario.OVERHEATING,
       SimulationScenario.OVERCURRENT,
       SimulationScenario.HIGH_HUMIDITY,
+      SimulationScenario.ARC_FLASH,
       SimulationScenario.COMBINED_FAILURE,
     ];
 
@@ -179,6 +188,65 @@ describe('nextPanelState (failure scenarios)', () => {
         state = nextPanelState(scenario, state);
         expect(isPositiveFiniteState(state)).toBe(true);
       }
+    }
+  });
+});
+
+describe('arc flash and acoustic channels', () => {
+  it('starts inside the normal arc flash and acoustic ranges', () => {
+    for (let i = 0; i < 200; i++) {
+      const state = randomInitialState();
+      expect(state.arcFlash).toBeGreaterThanOrEqual(ARC_FLASH_RANGE.min);
+      expect(state.arcFlash).toBeLessThanOrEqual(ARC_FLASH_RANGE.max);
+      expect(state.acoustic).toBeGreaterThanOrEqual(ACOUSTIC_RANGE.min);
+      expect(state.acoustic).toBeLessThanOrEqual(ACOUSTIC_RANGE.max);
+    }
+  });
+
+  it('stays in the normal band for both channels in NORMAL and in every non-arc failure scenario', () => {
+    const scenarios = [
+      SimulationScenario.NORMAL,
+      SimulationScenario.OVERHEATING,
+      SimulationScenario.OVERCURRENT,
+      SimulationScenario.HIGH_HUMIDITY,
+      SimulationScenario.COMBINED_FAILURE,
+    ];
+    for (const scenario of scenarios) {
+      let state = randomInitialState();
+      for (let i = 0; i < 300; i++) {
+        state = nextPanelState(scenario, state);
+        expect(state.arcFlash).toBeLessThanOrEqual(ARC_FLASH_RANGE.max);
+        expect(state.acoustic).toBeGreaterThanOrEqual(ACOUSTIC_RANGE.min);
+        expect(state.acoustic).toBeLessThanOrEqual(ACOUSTIC_RANGE.max);
+      }
+    }
+  });
+
+  it('produces an intense optical event and an acoustic burst in ARC_FLASH', () => {
+    let state = BASELINE_STATE;
+    for (let i = 0; i < 10; i++) {
+      state = nextPanelState(SimulationScenario.ARC_FLASH, state);
+    }
+    expect(state.arcFlash).toBeGreaterThan(90);
+    expect(state.acoustic).toBeGreaterThan(80);
+  });
+
+  it('keeps temperature, current and humidity normal during ARC_FLASH (the arc alone must trigger the alarm)', () => {
+    let state = BASELINE_STATE;
+    for (let i = 0; i < 60; i++) {
+      state = nextPanelState(SimulationScenario.ARC_FLASH, state);
+      expect(state.cableTemperature).toBeLessThanOrEqual(CABLE_RANGE.max);
+      expect(state.current).toBeLessThanOrEqual(CURRENT_RANGE.max);
+      expect(state.humidity).toBeLessThanOrEqual(HUMIDITY_RANGE.max);
+    }
+  });
+
+  it('clamps ARC_FLASH at sane ceilings instead of running away', () => {
+    let state = BASELINE_STATE;
+    for (let i = 0; i < 200; i++) {
+      state = nextPanelState(SimulationScenario.ARC_FLASH, state);
+      expect(state.arcFlash).toBeLessThanOrEqual(100);
+      expect(state.acoustic).toBeLessThanOrEqual(95);
     }
   });
 });

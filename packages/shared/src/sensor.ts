@@ -1,9 +1,12 @@
-// Not: PARTIAL_DISCHARGE, ARC_FLASH, ACOUSTIC gelecekte buraya eklenebilir.
+// ARC_FLASH: optik yogunluk (% - ani isik patlamasi). ACOUSTIC: pano ici ses
+// seviyesi (dB) - kismi desarj / ark carpma sesi gostergesi.
 export enum SensorType {
   AMBIENT_TEMPERATURE = 'AMBIENT_TEMPERATURE',
   CABLE_TEMPERATURE = 'CABLE_TEMPERATURE',
   HUMIDITY = 'HUMIDITY',
   CURRENT = 'CURRENT',
+  ARC_FLASH = 'ARC_FLASH',
+  ACOUSTIC = 'ACOUSTIC',
 }
 
 export const SENSOR_UNITS: Record<SensorType, string> = {
@@ -11,6 +14,8 @@ export const SENSOR_UNITS: Record<SensorType, string> = {
   [SensorType.CABLE_TEMPERATURE]: '°C',
   [SensorType.HUMIDITY]: '%',
   [SensorType.CURRENT]: 'A',
+  [SensorType.ARC_FLASH]: '%',
+  [SensorType.ACOUSTIC]: 'dB',
 };
 
 export interface Sensor {
