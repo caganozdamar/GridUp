@@ -29,7 +29,8 @@
     "docker:db:up": "docker compose -f docker-compose.yml up -d postgres",
     "docker:db:down": "docker compose -f docker-compose.yml down",
     "prisma:generate": "npm run prisma:generate --workspace=apps/api",
-    "prisma:migrate": "npm run prisma:migrate --workspace=apps/api"
+    "prisma:migrate": "npm run prisma:migrate --workspace=apps/api",
+    "mock:sms": "npm run mock:sms-gateway --workspace=apps/api"
   },
   "engines": {
     "node": ">=20.0.0"

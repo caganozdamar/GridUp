@@ -62,6 +62,9 @@ services:
       NOTIFICATION_PROVIDER: ${NOTIFICATION_PROVIDER:-demo}
       SMS_RECIPIENT: ${SMS_RECIPIENT:-Operations Team}
       WHATSAPP_RECIPIENT: ${WHATSAPP_RECIPIENT:-Operations Team}
+      # http provider icin (NOTIFICATION_PROVIDER=http): sirket ici SMS gateway'i
+      NOTIFICATION_GATEWAY_URL: ${NOTIFICATION_GATEWAY_URL:-}
+      NOTIFICATION_GATEWAY_TOKEN: ${NOTIFICATION_GATEWAY_TOKEN:-}
     ports:
       # Sadece IT/OT private network icindeki diger makinelerden erisim
       # gerekiyorsa disari acilir; internet'e expose edilmemelidir.
