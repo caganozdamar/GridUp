@@ -13,7 +13,14 @@ double adc_to_cable_celsius(int adc);
 double adc_to_current_amps(int adc);
 /* 0..100 % optical intensity, linear. */
 double adc_to_arc_percent(int adc);
-/* 30..100 dB, linear. An indicator of acoustic activity, not a calibrated SPL. */
-double adc_to_acoustic_db(int adc);
+/* A microphone idles at mid-scale and swings around it, so loudness is the
+ * AC amplitude (RMS deviation from the mean) of a burst of samples, not the
+ * average level. The burst is a plain int array so it can be unit tested. */
+double acoustic_rms_counts(const int *counts, int n);
+/* RMS counts -> 40..100 dB. At or below ACOUSTIC_IDLE_RMS (sensor noise floor,
+ * calibrated from the Wokwi sound sensor) reads 40 dB; a full-scale swing
+ * reads 100 dB. An activity indicator, not a calibrated SPL. */
+double acoustic_db_from_rms(double rms);
+#define ACOUSTIC_IDLE_RMS 350.0
 
 #endif

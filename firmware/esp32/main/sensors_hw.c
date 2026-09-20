@@ -8,6 +8,7 @@
 #include "hal.h"
 
 #define ADC_SAMPLES 8 /* averaged to smooth ADC noise */
+#define ACOUSTIC_SAMPLES 64 /* burst used to measure the AC amplitude */
 
 static adc_oneshot_unit_handle_t s_adc;
 static adc_channel_t s_ntc, s_current, s_arc, s_acoustic;
@@ -41,6 +42,16 @@ static int read_counts(adc_channel_t channel) {
   return sum / ADC_SAMPLES;
 }
 
+/* Loudness needs the signal's swing, so sample a burst instead of averaging.
+ * Returns the RMS deviation in counts, or NAN if the ADC read fails. */
+static double read_acoustic_rms(adc_channel_t channel) {
+  int burst[ACOUSTIC_SAMPLES];
+  for (int i = 0; i < ACOUSTIC_SAMPLES; i++) {
+    if (adc_oneshot_read(s_adc, channel, &burst[i]) != ESP_OK) return NAN;
+  }
+  return acoustic_rms_counts(burst, ACOUSTIC_SAMPLES);
+}
+
 int sensors_hw_read(void *ctx, sensor_state_t *out) {
   (void)ctx;
   for (int k = 0; k < SENSOR_KIND_COUNT; k++) out->v[k] = NAN;
@@ -59,7 +70,8 @@ int sensors_hw_read(void *ctx, sensor_state_t *out) {
   if (counts >= 0) out->v[SENSOR_CURRENT] = adc_to_current_amps(counts);
   counts = read_counts(s_arc);
   if (counts >= 0) out->v[SENSOR_ARC_FLASH] = adc_to_arc_percent(counts);
-  counts = read_counts(s_acoustic);
-  if (counts >= 0) out->v[SENSOR_ACOUSTIC] = adc_to_acoustic_db(counts);
+  double rms = read_acoustic_rms(s_acoustic);
+  out->v[SENSOR_ACOUSTIC] = acoustic_db_from_rms(rms);
+  fw_log("[sensors] acoustic rms=%.0f counts", rms);
   return 0;
 }

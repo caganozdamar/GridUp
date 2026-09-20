@@ -17,4 +17,23 @@ double adc_to_current_amps(int adc) { return clamp_counts(adc) / ADC_MAX_COUNTS 
 
 double adc_to_arc_percent(int adc) { return clamp_counts(adc) / ADC_MAX_COUNTS * 100.0; }
 
-double adc_to_acoustic_db(int adc) { return 30.0 + clamp_counts(adc) / ADC_MAX_COUNTS * 70.0; }
+double acoustic_rms_counts(const int *counts, int n) {
+  if (!counts || n < 2) return NAN;
+  double mean = 0.0;
+  for (int i = 0; i < n; i++) mean += clamp_counts(counts[i]);
+  mean /= n;
+  double sq = 0.0;
+  for (int i = 0; i < n; i++) {
+    double d = clamp_counts(counts[i]) - mean;
+    sq += d * d;
+  }
+  return sqrt(sq / n);
+}
+
+double acoustic_db_from_rms(double rms) {
+  if (isnan(rms)) return NAN;
+  double full = ADC_MAX_COUNTS / 2.0;
+  double frac = (rms - ACOUSTIC_IDLE_RMS) / (full - ACOUSTIC_IDLE_RMS);
+  frac = frac < 0.0 ? 0.0 : (frac > 1.0 ? 1.0 : frac);
+  return 40.0 + frac * 60.0;
+}

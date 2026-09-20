@@ -170,8 +170,16 @@ static void test_adc_conversions(void) {
   CHECK(adc_to_current_amps(-50) == 0.0);    /* clamped */
   CHECK(adc_to_current_amps(9999) == 250.0);
   CHECK(fabs(adc_to_arc_percent(2048) - 50.0) < 0.1);
-  CHECK(adc_to_acoustic_db(0) == 30.0);
-  CHECK(fabs(adc_to_acoustic_db(ADC_MAX_COUNTS) - 100.0) < 1e-9);
+  /* Microphone: loudness is the swing around the mid-scale bias, not the level. */
+  int quiet[4] = {2048, 2048, 2048, 2048};
+  int loud[4] = {0, ADC_MAX_COUNTS, 0, ADC_MAX_COUNTS};
+  int idle_noise[4] = {2048 + 200, 2048 - 200, 2048 + 200, 2048 - 200};
+  CHECK(acoustic_rms_counts(quiet, 4) == 0.0);
+  CHECK(acoustic_db_from_rms(acoustic_rms_counts(quiet, 4)) == 40.0);  /* bias alone is silence */
+  CHECK(acoustic_db_from_rms(acoustic_rms_counts(idle_noise, 4)) == 40.0);  /* below the noise floor */
+  CHECK(fabs(acoustic_db_from_rms(acoustic_rms_counts(loud, 4)) - 100.0) < 1e-9);
+  CHECK(isnan(acoustic_rms_counts(quiet, 1)));
+  CHECK(isnan(acoustic_db_from_rms(NAN)));
   DONE("adc: conversions, clamping and open/short detection");
 }
 
