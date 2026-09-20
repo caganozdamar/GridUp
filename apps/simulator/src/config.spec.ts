@@ -28,3 +28,18 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ SIMULATION_INTERVAL_MS: '-5' })).toThrow();
   });
 });
+
+describe('PANEL_RATED_CURRENT_A', () => {
+  it('defaults to the 150 A reference rating', () => {
+    expect(loadConfig({}).ratedCurrentA).toBe(150);
+  });
+
+  it('reads a custom rating', () => {
+    expect(loadConfig({ PANEL_RATED_CURRENT_A: '2312' }).ratedCurrentA).toBe(2312);
+  });
+
+  it('rejects a non-positive or invalid rating', () => {
+    expect(() => loadConfig({ PANEL_RATED_CURRENT_A: '0' })).toThrow();
+    expect(() => loadConfig({ PANEL_RATED_CURRENT_A: 'x' })).toThrow();
+  });
+});

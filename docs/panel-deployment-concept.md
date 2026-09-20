@@ -63,9 +63,11 @@ Organizatörün sağladığı TEDAŞ-MLZ/2003-06.B AG pano şartnamesi ve 1250-1
 - **Sıcaklık eşikleri:** Bina içi ortam en çok 40 °C kabul edilir; ortam sıcaklık eşiklerinin bunu dikkate alması gerekir. Sıcaklık artışı sınırları TS EN 61439-1 Çizelge 8'e göredir (bu belgede değerleri alınmadı).
 - **Havalandırma:** Üst kapakta açıklık olmaması, üst bölmede ısı birikimi olabileceği anlamına gelir; ortam sensörünü hava çıkışına yakın koymak yararlıdır (öneri).
 
-### Bilinen uyumsuzluk: akım eşikleri
+### Akım eşikleri anma akımına göre ölçeklenir
 
-Risk motorunda akım eşikleri **mutlak amper** cinsindendir (`risk-engine.config.ts`: 110 A'ya kadar normal, 150 A üstü kritik). 1600 kVA panonun ana bara anma akımı 2312 A'dır ve organizatörün sentetik L1 verisi 90-540 A aralığındadır. Bu eşiklerle gerçek ölçekteki normal bir yük bile CRITICAL görünür. Eşiklerin **anma akımının yüzdesi** olarak tanımlanması (örn. panonun anma akımı yapılandırılabilir alan olsun) gerekir; bu değişiklik henüz yapılmamıştır.
+Risk motoru akım eşiklerini **panonun anma akımına oranla** hesaplar: `PANEL_RATED_CURRENT_A` (varsayılan 150 A, demo ölçeği). Eşikler yük yüzdesidir: anma akımının yaklaşık %73'üne kadar normal, %87'de yükselen, %100'de yüksek, %113 üzerinde kritik; akım trendi (A/dk) de aynı oranla ölçeklenir. 1600 kVA panoda ana bara anma akımı 2312 A olduğundan API `PANEL_RATED_CURRENT_A=2312` ile çalıştırılır. Bu ayarla organizatörün sentetik verisinin üst değeri (540 A, %23) NORMAL kalır; 2312 A'nın %120'si ise CRITICAL olur.
+
+Simülatör aynı değişkenle akım okumalarını orantılı ölçekler (`PANEL_RATED_CURRENT_A=2312 npm run demo:critical`, kritik senaryoda ~3390 A). Bu değişken API ve simülatörde **aynı** olmalıdır. Ayar tüm panolar için tek değerdir; pano başına anma akımı (veritabanında) yapılmadı. ESP32 firmware'i henüz ölçeklenmemiştir (demo ölçeğinde akım üretir).
 
 ## Neden "generic"?
 

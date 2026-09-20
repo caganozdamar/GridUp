@@ -6,8 +6,8 @@ import {
   CABLE_TEMPERATURE_ANCHORS,
   CABLE_TEMPERATURE_TREND_ANCHORS,
   CORRELATION_BONUSES,
-  CURRENT_ANCHORS,
-  CURRENT_TREND_ANCHORS,
+  currentAnchors,
+  currentTrendAnchors,
   DISCHARGE_FLOORS,
   HUMIDITY_ANCHORS,
   HUMIDITY_TREND_ANCHORS,
@@ -49,14 +49,14 @@ export function computeRiskExplanation(
   const acousticStats = statsByType[SensorType.ACOUSTIC];
 
   const temperatureRisk = cableStats ? piecewiseLinearScore(cableStats.latest, CABLE_TEMPERATURE_ANCHORS) : 0;
-  const currentRisk = currentStats ? piecewiseLinearScore(currentStats.latest, CURRENT_ANCHORS) : 0;
+  const currentRisk = currentStats ? piecewiseLinearScore(currentStats.latest, currentAnchors()) : 0;
   const humidityRisk = humidityStats ? piecewiseLinearScore(humidityStats.latest, HUMIDITY_ANCHORS) : 0;
 
   const cableTrendRisk = cableStats
     ? piecewiseLinearScore(Math.max(0, cableStats.trendPerMinute), CABLE_TEMPERATURE_TREND_ANCHORS)
     : 0;
   const currentTrendRisk = currentStats
-    ? piecewiseLinearScore(Math.max(0, currentStats.trendPerMinute), CURRENT_TREND_ANCHORS)
+    ? piecewiseLinearScore(Math.max(0, currentStats.trendPerMinute), currentTrendAnchors())
     : 0;
   const humidityTrendRisk = humidityStats
     ? piecewiseLinearScore(Math.max(0, humidityStats.trendPerMinute), HUMIDITY_TREND_ANCHORS)

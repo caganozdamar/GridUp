@@ -30,7 +30,26 @@ export const CABLE_TEMPERATURE_ANCHORS: Anchor[] = [
   [85, 100],
 ];
 
-// Current: <=110 normal, 110-130 yukselen, 130-150 yuksek, >150 kritik.
+// Akim esikleri panonun ANMA AKIMINA gore olculenir. Asagidaki anchor'lar
+// REFERENCE_RATED_CURRENT_A (150 A) icin amper cinsinden yazilmistir ve
+// currentAnchors()/currentTrendAnchors() ile PANEL_RATED_CURRENT_A'ya oranla
+// olceklenir. Yani esikler yuk yuzdesidir: ~%73'e kadar normal, %87 yukselen,
+// %100 (anma akimi) yuksek, %113 ustu kritik. Ornek: 1600 kVA AG panoda ana
+// bara anma akimi 2312 A (TEDAS Tablo 3a) -> PANEL_RATED_CURRENT_A=2312.
+export const REFERENCE_RATED_CURRENT_A = 150;
+
+/** PANEL_RATED_CURRENT_A (A); gecersizse referans deger. Her cagrida okunur (testler degistirebilsin). */
+export function ratedCurrentA(): number {
+  const value = Number(process.env.PANEL_RATED_CURRENT_A);
+  return Number.isFinite(value) && value > 0 ? value : REFERENCE_RATED_CURRENT_A;
+}
+
+function scaleAnchors(anchors: Anchor[]): Anchor[] {
+  const factor = ratedCurrentA() / REFERENCE_RATED_CURRENT_A;
+  return anchors.map(([value, score]) => [value * factor, score]);
+}
+
+// Current (150 A referans): <=110 normal, 110-130 yukselen, 130-150 yuksek, >150 kritik.
 export const CURRENT_ANCHORS: Anchor[] = [
   [60, 0],
   [110, 15],
@@ -96,6 +115,15 @@ export const CURRENT_TREND_ANCHORS: Anchor[] = [
   [180, 75],
   [260, 100],
 ];
+
+export function currentAnchors(): Anchor[] {
+  return scaleAnchors(CURRENT_ANCHORS);
+}
+
+/** Akim trendi (A/dk) de anma akimiyla orantili olceklenir. */
+export function currentTrendAnchors(): Anchor[] {
+  return scaleAnchors(CURRENT_TREND_ANCHORS);
+}
 
 export const HUMIDITY_TREND_ANCHORS: Anchor[] = [
   [0, 0],

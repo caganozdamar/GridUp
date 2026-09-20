@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { getRiskLevel, RiskLevel, SensorType } from '@grid-up/shared';
 import type { SensorStats } from './risk-math.util.js';
 import { computeRiskExplanation } from './risk-scoring.js';
@@ -262,3 +262,39 @@ describe('arc flash and acoustic (partial discharge) scoring', () => {
   });
 });
 
+
+describe('current thresholds scale with the panel rated current', () => {
+  const withCurrent = (latest: number, trendPerMinute = 0) =>
+    computeRiskExplanation({ ...NORMAL_STATS, [SensorType.CURRENT]: stats({ latest, trendPerMinute }) });
+
+  afterEach(() => {
+    delete process.env.PANEL_RATED_CURRENT_A;
+  });
+
+  it('keeps the 150 A reference behaviour by default', () => {
+    expect(withCurrent(85).components.current).toBeLessThan(15);
+    expect(withCurrent(200).components.current).toBe(100);
+  });
+
+  it('does not flag a 540 A load on a 2312 A panel', () => {
+    process.env.PANEL_RATED_CURRENT_A = '2312';
+    expect(withCurrent(540).components.current).toBe(0);
+    expect(withCurrent(540).level).toBe(RiskLevel.NORMAL);
+  });
+
+  it('flags a load above the rated current on a 2312 A panel', () => {
+    process.env.PANEL_RATED_CURRENT_A = '2312';
+    expect(withCurrent(2312 * 1.2).components.current).toBe(100);
+  });
+
+  it('gives the same score for the same load percentage at any rating', () => {
+    const atReference = withCurrent(130).components.current;
+    process.env.PANEL_RATED_CURRENT_A = '2312';
+    expect(withCurrent(130 * (2312 / 150)).components.current).toBeCloseTo(atReference, 6);
+  });
+
+  it('ignores an invalid rating', () => {
+    process.env.PANEL_RATED_CURRENT_A = 'abc';
+    expect(withCurrent(200).components.current).toBe(100);
+  });
+});
