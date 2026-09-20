@@ -83,7 +83,10 @@ Bu bir **npm workspaces monorepo**'dur: `apps/*` ve `packages/*` altındaki her 
 - Gerçek zamanlı, ağırlıklı, trend-duyarlı risk skorlama motoru
 - Çoklu-sensör korelasyon bonusları (örn. akım + kablo sıcaklığı birlikte
   yükseliyorsa ek risk puanı)
-- Anomaly + alarm lifecycle (ACTIVE → ACKNOWLEDGED → RESOLVED); operatör alarmı dashboard'dan onaylayabilir
+- Anomaly + alarm lifecycle (ACTIVE → ACKNOWLEDGED → RESOLVED); operatör alarmı dashboard'dan onaylayabilir.
+  Risk alarmları histerezisle çözülür (5 ardışık normal analiz), aynı panoya 2 dk içinde aynı seviyede tekrar SMS gitmez
+- Susan modül tespiti: bir panonun hiçbir sensöründen 60 sn veri gelmezse `MODULE_OFFLINE` alarmı ve SMS
+- Dashboard'da SCADA ekranı: Modbus sunucusunun sunduğu register tablosu (read-only)
 - SMS/WhatsApp bildirim akışı: demo provider ve yapılandırılabilir HTTP
   gateway provider'ı (çoklu alıcı, yeniden deneme, arka plan gönderimi, audit
   trail); gerçek hesap olmadan denemek için yerel gateway emülatörü
@@ -155,6 +158,14 @@ gateway emülatörü içerir (`npm run mock:sms`). Gerçek bir gateway, modem ya
 WhatsApp hesabıyla denenmemiştir. Politika ve sahada çalışma tasarımı:
 [docs/notification-policy.md](docs/notification-policy.md).
 
+Alarmlar iki türdür: risk skoruna bağlı **RISK** ve verinin kesildiği **MODULE_OFFLINE**
+(bir panonun hiçbir sensöründen 60 sn okuma gelmemesi; veri gelince kendiliğinden
+çözülür). Aynı pano için art arda alarm ve SMS üretimini engellemek üzere risk alarmı
+5 ardışık normal analizden önce çözülmez ve aynı seviyede yeni bir bildirim 2 dk
+içinde tekrar gönderilmez (seviye yükselişi her zaman bildirilir). Ayarlar:
+`ALARM_RESOLVE_AFTER_TICKS`, `MODULE_OFFLINE_AFTER_MS`, `NOTIFICATION_COOLDOWN_MS`
+(bkz. `apps/api/.env.example`).
+
 ```bash
 # Terminal 1: emülatör (ilk 2 isteği bilerek 503 döner)
 MOCK_GATEWAY_FAIL_FIRST=2 npm run mock:sms
@@ -199,6 +210,12 @@ Panel: PANO-003
 40030 Data Quality         : VALID
 ----------------------------------------
 ```
+
+**Dashboard'da SCADA ekranı:** dashboard'daki **SCADA** sayfası, gateway'in Modbus
+sunucusunun sunduğu aynı register tablosunu (ham ve mühendislik değeriyle, `40001+` ve
+`41001+`) gösterir. Gateway bunu `http://localhost:1580/registers` üzerinden yalnızca
+`GET` ile sunar (`SCADA_HTTP_PORT`, `SCADA_HTTP_HOST`). Bu bir izleme ekranıdır, gerçek bir
+SCADA yazılımının yerini tutmaz.
 
 Bir panonun sensör verisi `SCADA_DATA_STALE_MS` (varsayılan `10000` ms)
 süresinden daha eski olduğunda (örn. simülatör durduğunda), o panonun

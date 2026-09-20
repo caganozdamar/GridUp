@@ -139,6 +139,20 @@ Anlat:
 > "GRID UP does not require replacing the existing SCADA. It exposes the
 > calculated risk through a read-only Modbus TCP gateway."
 
+Sonra dashboard'da **SCADA** sayfasını açın (`npm run dev:scada` çalışıyor
+olmalı). Sayfa, gateway'in Modbus sunucusunun sunduğu **gerçek register
+tablosunu** gösterir: pano listesi (risk skoru, seviye, aktif alarm, Data
+Quality) ve seçili panonun 14 register'ı (`40021`… ham değer ve mühendislik
+değeri). PANO-003'ü seçip `Risk Score`, `Cable Temperature` ve `Data Quality`
+satırlarını gösterin. Bu, SCADA tarafının gördüğünün ta kendisidir; `scada:read`
+çıktısıyla aynı değerlerdir.
+
+**Veri kesilirse (jüri sorusu için):** simülatörü durdurun. 10 sn sonra SCADA
+sayfasında `Data Quality` **INVALID** olur; 60-75 sn sonra Alarms
+sayfasında **MODULE OFFLINE** alarmı açılır ve SMS gider. Simülatörü yeniden
+başlatınca alarm kendiliğinden çözülür. Modülün susması sessizce
+kaybolmaz.
+
 ## STEP 6 — Architecture
 
 On-premise mimariyi gösterin (bkz. [on-premise-architecture.md](on-premise-architecture.md)

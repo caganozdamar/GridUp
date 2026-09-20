@@ -16,20 +16,59 @@ gösterilmelidir".
 ## Politika: kim, ne zaman, hangi kanaldan
 
 Bildirim yalnızca **yeni bir alarm oluştuğu anda** tetiklenir. 2 saniyelik veri
-tick'lerinde ya da alarm sürerken tekrar gönderilmez. Seviye değişirse (örn.
-HIGH → CRITICAL) eski alarm kapanır, yeni seviyede yeni bir alarm açılır ve
-**yeni bildirim** gider; böylece kötüleşen durum operasyon ekibine ayrıca
-haber verilir.
+tick'lerinde ya da alarm sürerken tekrar gönderilmez. Alarm iki türdür
+(`Alarm.kind`): **RISK** (risk skoru HIGH/CRITICAL) ve **MODULE_OFFLINE** (panonun
+hiçbir sensöründen veri gelmiyor). İki tür birbirinin yaşam döngüsünü etkilemez.
+
+**Seviye değişimi.** Seviye **yükselirse** (HIGH → CRITICAL) eski alarm kapanır,
+yeni seviyede yeni bir alarm açılır ve **yeni bildirim** gider; kötüleşen durum
+her zaman yeniden duyurulur. Seviye **düşerse** (CRITICAL → HIGH) mevcut alarm
+olduğu gibi açık kalır: risk hâlâ alarm bandındadır ve seviye sınırında gidip
+gelen bir skor her tick yeni SMS üretmez.
 
 | Risk seviyesi | Risk skoru | Kanal | Mesaj |
 | ------------- | ---------- | ----- | ----- |
 | NORMAL / WARNING | 0-59 | Bildirim yok (alarm oluşmaz, dashboard'da izlenir) | — |
 | HIGH | 60-79 | SMS | Kısa: pano, skor, ilk neden, "dashboard'a bakın" |
 | CRITICAL | 80-100 | SMS + WhatsApp | SMS: "acil inceleme önerilir"; WhatsApp: pano, saha, skor, tespit edilen koşullar (en fazla 4) |
+| **Susan modül** (MODULE_OFFLINE) | — | SMS (HIGH) | "module offline", ne kadar süredir veri yok, "pano izlenmiyor" |
+
+### Susan modül alarmı
+
+Risk motoru yalnızca veri **geldiğinde** çalışır, bu yüzden veri kesilince kendi
+başına bir şey tetiklemez. `ModuleHealthService` her 15 saniyede bir her panonun
+**en yeni okumasının yaşına** bakar:
+
+- **Açılır:** panonun hiçbir sensöründen `MODULE_OFFLINE_AFTER_MS` (varsayılan
+  **60 sn**) boyunca okuma gelmediyse. Eşik, dashboard'daki 10 sn'lik "STALE"
+  rozetinden bilerek daha uzundur: kısa bir ağ kesintisi alarm üretmesin.
+- **Çözülür:** okuma tekrar geldiğinde (en yeni okuma 10 sn'den taze).
+- **Açılmaz:** hiç veri göndermemiş pano (`NO_DATA`) için. Henüz kurulmamış bir
+  modül kimseyi uyandırmamalıdır. Diğer sensörler canlıyken **tek bir sensörün**
+  susması bu alarmın kapsamı dışındadır (pano yalnızca `STALE` görünür).
+- Alarm bir kez açılır, sessizlik sürdükçe tekrar açılmaz ve bildirim yinelenmez.
+  Onaylanabilir (Acknowledge).
 
 Konfigürasyon: `apps/api/src/notifications/notifications.config.ts`
 (`SEVERITY_CHANNEL_MAP`). Mesaj içeriği sabit değildir; gerçek risk verisinden
 (`score`, `reasons`) üretilir (`notification-message.util.ts`).
+
+### Histerezis ve cooldown
+
+İki mekanizma, eşik civarında gidip gelen bir skorun **alarm ve SMS fırtınası**
+üretmesini engeller:
+
+- **Çözülme histerezisi.** Bir RISK alarmı, risk **arka arkaya
+  `ALARM_RESOLVE_AFTER_TICKS` (varsayılan 5, yani 2 sn'lik tick'te ≈ 10 sn)
+  analiz boyunca** alarm bandının altında kalırsa çözülür. Tek bir düşük okuma
+  alarmı kapatıp bir sonraki tick'te yeniden açmaz. Durum `RiskScore` kayıtlarından
+  türetilir, API yeniden başlasa da sayaç kaybolmaz.
+- **Bildirim cooldown'u.** Aynı pano + aynı alarm türü + aynı kanal için, son
+  `NOTIFICATION_COOLDOWN_MS` (varsayılan **2 dk**) içinde **aynı ya da daha
+  yüksek seviyede** bir bildirim zaten gönderildiyse yenisi gönderilmez
+  (log'a `suppressed` yazılır). **Seviye yükselişi cooldown'a takılmaz**
+  (HIGH sonrası CRITICAL her zaman bildirilir). Ulaşmamış (`FAILED`) bildirimler
+  cooldown sayılmaz. `0` = kapalı; demo provalarında kullanılır.
 
 **Alıcılar.** Her kanal için virgülle ayrılmış bir liste tanımlanır
 (`SMS_RECIPIENT`, `WHATSAPP_RECIPIENT`); her alıcıya ayrı bildirim kaydı
@@ -123,12 +162,15 @@ gateway / zaman aşımı), `MOCK_GATEWAY_TOKEN` (yetkilendirme).
   çalışılır, ama ani kesintide kayıp mümkündür).
 - **Kanal yedeği (fallback) yok.** SMS başarısız olursa otomatik WhatsApp'a
   geçilmez; her kanal bağımsızdır. İki kanal zaten CRITICAL'da birlikte gider.
-- **Alarm dalgalanması (flapping) bildirim fırtınası yaratabilir.** Alarm,
-  risk eşiği civarında gidip gelirse (gürültü ya da aynı panoya birden fazla
-  veri kaynağı yazması) her yeni alarm yeni bildirim gönderir. Eşik histerezisi
-  ve pano başına bildirim bekleme süresi (cooldown) yoktur. Bunun gözlendiği
-  durum ve önlem önerisi için bkz.
-  [installation-and-failure-analysis.md](installation-and-failure-analysis.md).
+- **Cooldown bir uyarıyı bilerek bastırır.** Aynı seviyede yeni bir alarm, ilk
+  bildirimden 2 dk sonra açılırsa SMS gider; 2 dk içinde açılırsa gitmez (alarm
+  ve dashboard'da görünür, ama SMS yok). Bastırılan bildirim şu an yalnızca log'a
+  yazılır, `notifications` tablosunda ayrı bir `SUPPRESSED` kaydı yoktur.
+  Aynı pano dalgalanması gerçekten sürüyorsa bu, ilk SMS'in yeterli olduğu
+  varsayımına dayanır.
+- **Anomali kayıtları hâlâ anında çözülür.** Histerezis yalnızca **alarm**
+  yaşam döngüsündedir; ayrı `Anomaly` kayıtları (ve zaman çizelgesindeki
+  ANOMALY olayları) eşikte gidip gelirse eskisi gibi açılıp kapanır.
 - **Yükseltme (escalation) yok.** Alarm onaylanmazsa üst kademeye otomatik
   bildirim gitmez. Alarmı onaylamak mümkündür (`PATCH /alarms/:id/acknowledge`,
   dashboard'daki Alarms sayfasında **Acknowledge** butonu); onaylanan alarm açık

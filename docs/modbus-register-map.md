@@ -166,6 +166,28 @@ değerlerini korur. Kaynak: `register-map.ts` (`ExtendedRegisterOffset`,
   SCADA Gateway **çökmez**; son başarılı snapshot'ı bellekte tutmaya devam
   eder ve API tekrar erişilebilir olduğunda otomatik senkronize olur.
 
+## Dashboard'daki SCADA ekranı
+
+Dashboard'un **SCADA** sayfası, bir SCADA istemcisinin gateway'den FC03 ile
+okuyacağı register tablosunu gösterir. Tarayıcı Modbus TCP konuşamadığı için
+gateway, **aynı register tablosunu** (`RegisterStore`) salt-okunur bir HTTP ucundan
+JSON olarak sunar; ekrandaki değerler GRID UP API'sinden ayrı hesaplanmaz.
+
+```
+GET http://localhost:1580/registers   -> { modbus, api, staleMs, panels: [{ panelCode, registers: [
+                                            { label: 40021, address: 20, name: "Risk Score", raw: 94, display: "94" }, ... ] }] }
+GET http://localhost:1580/health
+```
+
+- Yalnızca `GET` (diğer yöntemler `405`); hiçbir yazma yolu yoktur.
+- Ayarlar: `SCADA_HTTP_PORT` (varsayılan `1580`, `0` = kapalı), `SCADA_HTTP_HOST`
+  (varsayılan `127.0.0.1`, docker'da `0.0.0.0`), `SCADA_HTTP_ALLOWED_ORIGIN` (CORS).
+- Register adı, birimi ve ×10 ölçeği tek bir yerde tutulur (`register-view.ts`);
+  komut satırı okuyucu (`npm run scada:read`) ve bu uç aynı açıklamayı kullanır.
+- Bu bir **izleme ekranıdır**; gerçek bir SCADA yazılımının (alarm yönetimi,
+  trend, HMI) yerini tutmaz. Modbus portu gibi bu port da yalnızca private/OT
+  ağa açılmalıdır.
+
 ## Read-only prototip
 
 Bu Modbus TCP server **salt-okunurdur**:
