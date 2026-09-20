@@ -13,101 +13,22 @@
 // On kosul: API ayakta olmali (npm run dev:api) ve Postgres erisilebilir olmali.
 
 import { PrismaClient } from '@prisma/client';
+import { SENSOR_TYPES, buildTickReadings, cleanupFixtures, postBatch as postBatchTo, setupFixtures } from './lib/scale-fixtures.mjs';
 
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000';
 const PANEL_COUNT = 100;
-const SENSOR_TYPES = [
-  { suffix: 'AMB-TEMP', type: 'AMBIENT_TEMPERATURE', unit: '°C', range: [24, 32] },
-  { suffix: 'CABLE-TEMP', type: 'CABLE_TEMPERATURE', unit: '°C', range: [30, 45] },
-  { suffix: 'HUM', type: 'HUMIDITY', unit: '%', range: [35, 60] },
-  { suffix: 'CURRENT', type: 'CURRENT', unit: 'A', range: [60, 110] },
-  // Normal calisma araliklari (simulator NORMAL senaryosuyla ayni): alarm uretmez.
-  { suffix: 'ARC', type: 'ARC_FLASH', unit: '%', range: [0, 3] },
-  { suffix: 'ACOUSTIC', type: 'ACOUSTIC', unit: 'dB', range: [35, 45] },
-];
 const TICK_COUNT = 5;
 const RUN_ID = Date.now();
-const SITE_CODE = `SCALE-TEST-SITE-${RUN_ID}`;
 
 const prisma = new PrismaClient();
-
-function randomInRange([min, max]) {
-  return min + Math.random() * (max - min);
-}
-
-async function setupFixtures() {
-  const site = await prisma.site.create({
-    data: { name: `Scalability Test Site ${RUN_ID}`, code: SITE_CODE },
-  });
-
-  const panels = [];
-  for (let i = 1; i <= PANEL_COUNT; i++) {
-    const panelCode = `SCALE-TEST-${RUN_ID}-${String(i).padStart(3, '0')}`;
-    const panel = await prisma.panel.create({
-      data: { siteId: site.id, name: panelCode, code: panelCode, status: 'ONLINE' },
-    });
-
-    const sensors = [];
-    for (const def of SENSOR_TYPES) {
-      const sensor = await prisma.sensor.create({
-        data: {
-          panelId: panel.id,
-          name: def.suffix,
-          code: `${panelCode}-${def.suffix}`,
-          type: def.type,
-          unit: def.unit,
-        },
-      });
-      sensors.push({ id: sensor.id, range: def.range });
-    }
-
-    panels.push({ id: panel.id, sensors });
-  }
-
-  return { site, panels };
-}
-
-async function cleanupFixtures(site) {
-  const panels = await prisma.panel.findMany({ where: { siteId: site.id }, select: { id: true } });
-  const panelIds = panels.map((p) => p.id);
-
-  await prisma.sensor.deleteMany({ where: { panelId: { in: panelIds } } });
-  await prisma.panel.deleteMany({ where: { id: { in: panelIds } } });
-  await prisma.site.delete({ where: { id: site.id } });
-}
-
-function buildTickReadings(panels) {
-  const timestamp = new Date().toISOString();
-  const readings = [];
-  for (const panel of panels) {
-    for (const sensor of panel.sensors) {
-      readings.push({ sensorId: sensor.id, value: randomInRange(sensor.range), timestamp });
-    }
-  }
-  return readings;
-}
 
 // API tek istekte en fazla 500 okuma kabul eder (readings exceeds maximum batch
 // size); daha buyuk bir tick parcalara bolunur, tıpkı birden fazla modulu
 // aggregate eden bir local gateway gibi.
 const MAX_BATCH_SIZE = 500;
 
-async function postBatch(readings) {
-  const start = performance.now();
-  const res = await fetch(`${API_BASE_URL}/readings/batch`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ readings }),
-  });
-  const elapsedMs = performance.now() - start;
-
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    return { ok: false, elapsedMs, error: `${res.status} ${res.statusText} ${text}`, inserted: 0 };
-  }
-
-  const body = await res.json();
-  return { ok: true, elapsedMs, inserted: body.inserted, error: null };
+function postBatch(readings) {
+  return postBatchTo(API_BASE_URL, readings);
 }
 
 // Mod A - "gateway": tum panolarin okumalari 500'luk parcalarla, sirayla gonderilir.
@@ -178,7 +99,7 @@ async function main() {
 
   console.log('Creating isolated test fixtures (temporary Site/Panels/Sensors)...');
   const fixtureStart = performance.now();
-  const { site, panels } = await setupFixtures();
+  const { site, panels } = await setupFixtures(prisma, { panelCount: PANEL_COUNT, prefix: 'SCALE-TEST', runId: RUN_ID });
   const fixtureMs = performance.now() - fixtureStart;
   console.log(
     `Created ${panels.length} panels, ${panels.length * SENSOR_TYPES.length} sensors in ${fixtureMs.toFixed(0)}ms`,
@@ -194,7 +115,7 @@ async function main() {
   } finally {
     console.log('Cleaning up test fixtures...');
     const cleanupStart = performance.now();
-    await cleanupFixtures(site);
+    await cleanupFixtures(prisma, site);
     const cleanupMs = performance.now() - cleanupStart;
     console.log(`Cleanup done in ${cleanupMs.toFixed(0)}ms (no SCALE-TEST-* rows remain)`);
     await prisma.$disconnect();

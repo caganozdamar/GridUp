@@ -1,0 +1,89 @@
+{
+  "panels": 100,
+  "sensorsPerPanel": 6,
+  "readingsPerTick": 600,
+  "payloadBytesPerModuleTick": 719,
+  "preloadSeconds": 54.9,
+  "afterPreload": {
+    "readings": {
+      "total": 1014603776,
+      "heap": 378093568,
+      "indexes": 636379136,
+      "rows": 3000000
+    },
+    "riskScores": {
+      "total": 24576,
+      "heap": 0,
+      "indexes": 16384,
+      "rows": 0
+    }
+  },
+  "live": {
+    "ticks": 60,
+    "requests": 6000,
+    "failedRequests": 0,
+    "tickWallMs": {
+      "avg": 203.3,
+      "p95": 221.8,
+      "max": 502.7
+    },
+    "requestMs": {
+      "p50": 183.5,
+      "p95": 214.3,
+      "max": 483
+    },
+    "apiCpuPercentOfOneCore": {
+      "avg": 50.7,
+      "max": 99.2
+    },
+    "apiRssMb": {
+      "avg": 246.3,
+      "max": 261.3
+    },
+    "postgresCpuPercentOfOneCore": {
+      "avg": 21.3,
+      "max": 141.8
+    },
+    "postgresMemMb": {
+      "avg": 381.6,
+      "max": 384.3
+    }
+  },
+  "growth": {
+    "readingsRowsAdded": 36000,
+    "riskScoreRowsAdded": 6000,
+    "readingBytesPerRow": 337.5,
+    "readingHeapBytesPerRow": 126.1,
+    "readingIndexBytesPerRow": 211.3,
+    "riskScoreBytesPerRow": 329,
+    "readingMarginalBytesPerRow": 280.6,
+    "riskScoreMarginalBytesPerRow": 324.9
+  },
+  "afterLive": {
+    "readings": {
+      "total": 1024704512,
+      "heap": 382951424,
+      "indexes": 641613824,
+      "rows": 3036000
+    },
+    "riskScores": {
+      "total": 1974272,
+      "heap": 909312,
+      "indexes": 1024000,
+      "rows": 6000
+    }
+  },
+  "hotQueryMsP50": 0.047,
+  "endpointMs": {
+    "panels": {
+      "p50": 938,
+      "p95": 958.1,
+      "max": 1080.5
+    },
+    "scadaPanels": {
+      "p50": 5255.5,
+      "p95": 5297.8,
+      "max": 5352.1
+    }
+  }
+}
