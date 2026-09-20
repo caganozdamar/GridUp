@@ -25,7 +25,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "node prisma/seed.ts",
-    "scada:scale-test": "node scripts/scada-scale-test.mjs"
+    "scada:scale-test": "node scripts/scada-scale-test.mjs",
+    "mock:sms-gateway": "node scripts/mock-sms-gateway.mjs"
   },
   "prisma": {
     "seed": "node prisma/seed.ts"
