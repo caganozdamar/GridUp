@@ -22,6 +22,21 @@ function buildUrl(path: string, params?: QueryParams): string {
   return url.toString();
 }
 
+export async function apiPatch<T>(path: string): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(buildUrl(path), { method: 'PATCH' });
+  } catch {
+    throw new ApiError('Could not connect to the server');
+  }
+
+  if (!response.ok) {
+    throw new ApiError(`Request failed (${response.status})`, response.status);
+  }
+
+  return (await response.json()) as T;
+}
+
 export async function apiGet<T>(path: string, params?: QueryParams): Promise<T> {
   const url = buildUrl(path, params);
 

@@ -6,6 +6,8 @@ export interface UsePollingResult<T> {
   isLoading: boolean;
   isOnline: boolean;
   lastUpdated: Date | null;
+  /** Bir sonraki tick'i beklemeden hemen yeniden yukler (ornegin bir islemden sonra). */
+  refresh: () => Promise<void>;
 }
 
 /**
@@ -67,5 +69,5 @@ export function usePolling<T>(
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [intervalMs, load, ...deps]);
 
-  return { data, error, isLoading, isOnline, lastUpdated };
+  return { data, error, isLoading, isOnline, lastUpdated, refresh: load };
 }

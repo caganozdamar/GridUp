@@ -83,7 +83,7 @@ Bu bir **npm workspaces monorepo**'dur: `apps/*` ve `packages/*` altındaki her 
 - Gerçek zamanlı, ağırlıklı, trend-duyarlı risk skorlama motoru
 - Çoklu-sensör korelasyon bonusları (örn. akım + kablo sıcaklığı birlikte
   yükseliyorsa ek risk puanı)
-- Anomaly + alarm lifecycle (ACTIVE → RESOLVED)
+- Anomaly + alarm lifecycle (ACTIVE → ACKNOWLEDGED → RESOLVED); operatör alarmı dashboard'dan onaylayabilir
 - SMS/WhatsApp bildirim akışı: demo provider ve yapılandırılabilir HTTP
   gateway provider'ı (çoklu alıcı, yeniden deneme, arka plan gönderimi, audit
   trail); gerçek hesap olmadan denemek için yerel gateway emülatörü
@@ -405,7 +405,7 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 - Gerçek ADM/GDZ SCADA bağlantısı
 - Gerçek endüstriyel sensör/vendor seçimi ve saha doğrulaması (bkz. [docs/field-module.md](docs/field-module.md))
 - Field module'ün gerçek kartta ve gerçek sensörlerle denenmesi, sensör kalibrasyonu ve özel PCB yerleşimi (bkz. [docs/electronic-design.md](docs/electronic-design.md))
-- Alarm onaylama (acknowledge) uç noktası, bildirimde kanal yedeği ve yükseltme (escalation) kuralları
+- Bildirimde kanal yedeği ve yükseltme (escalation) kuralları (onaylanmayan alarm için üst kademeye otomatik bildirim)
 
 ## Dokümantasyon
 

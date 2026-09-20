@@ -124,8 +124,10 @@ gateway / zaman aşımı), `MOCK_GATEWAY_TOKEN` (yetkilendirme).
 - **Kanal yedeği (fallback) yok.** SMS başarısız olursa otomatik WhatsApp'a
   geçilmez; her kanal bağımsızdır. İki kanal zaten CRITICAL'da birlikte gider.
 - **Yükseltme (escalation) yok.** Alarm onaylanmazsa üst kademeye otomatik
-  bildirim yoktur; alarm onaylama uç noktası da henüz yoktur
-  ([project-status.md](project-status.md)).
+  bildirim gitmez. Alarmı onaylamak mümkündür (`PATCH /alarms/:id/acknowledge`,
+  dashboard'daki Alarms sayfasında **Acknowledge** butonu); onaylanan alarm açık
+  kalır, aynı durum için yeni alarm veya bildirim üretilmez, risk normale
+  dönünce çözülür. Ama onay süresine bağlı bir yükseltme kuralı yoktur.
 - **Kişisel veri.** Telefon numaraları `notifications` tablosunda ve
   `GET /notifications` yanıtında açıktır; loglarda maskelenir. Kimlik doğrulama
   bu prototipte yoktur (production öncesi zorunludur, bkz.

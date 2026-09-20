@@ -12,7 +12,7 @@ amacıdır.
 | Trend detection | IMPLEMENTED | Pencere içi değişim hızı → aciliyet skoru (`*_TREND_ANCHORS`) |
 | Multi-sensor correlation bonuses | IMPLEMENTED | `CORRELATION_BONUSES` (current+cable temp, humidity+cable temp) |
 | Anomaly lifecycle | IMPLEMENTED | `HIGH_TEMPERATURE`, `TEMPERATURE_RISE`, `OVERCURRENT`, `HIGH_HUMIDITY`, `MULTI_SENSOR_RISK` |
-| Alarm lifecycle | IMPLEMENTED | ACTIVE → RESOLVED (bu Aşama 8 rehearsal'ında canlı sistemde uçtan uca doğrulandı) |
+| Alarm lifecycle | IMPLEMENTED | ACTIVE → ACKNOWLEDGED → RESOLVED. ACTIVE → RESOLVED Aşama 8 rehearsal'ında canlı sistemde doğrulandı; onaylama (`PATCH /alarms/:id/acknowledge`, dashboard butonu) e2e testlidir, tarayıcıda elle denenmedi |
 | Live dashboard | IMPLEMENTED | Overview / Panels / Panel Detail / Alarms (polling tabanlı) |
 | SMS/WhatsApp workflow | IMPLEMENTED WITH DEMO PROVIDER + HTTP GATEWAY ADAPTER (TESTED AGAINST AN EMULATOR) | `DemoNotificationProvider` gerçek gönderim yapmaz; `http` sağlayıcı yapılandırılabilir bir gateway'e POST eder, çoklu alıcı, yeniden deneme ve arka plan gönderimi vardır. Gerçek bir SMS/WhatsApp hesabı veya modem ile denenmedi. Bkz. [notification-policy.md](notification-policy.md) |
 | SCADA Modbus TCP | IMPLEMENTED PROTOTYPE | Read-only, demo portu 1502; bkz. modbus-register-map.md |

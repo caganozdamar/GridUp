@@ -211,8 +211,11 @@ export class RiskEngineService {
   private async reconcileAlarms(analysis: PanelRiskAnalysis): Promise<void> {
     const shouldAlarm = analysis.level === RiskLevel.HIGH || analysis.level === RiskLevel.CRITICAL;
 
+    // Onaylanmis (ACKNOWLEDGED) alarm da acik sayilir; aksi halde operator
+    // onayladiktan sonraki ilk tick'te ayni durum icin yeni alarm ve yeni
+    // bildirim uretilirdi.
     const activeAlarm = await this.prisma.alarm.findFirst({
-      where: { panelId: analysis.panelId, status: AlarmStatus.ACTIVE },
+      where: { panelId: analysis.panelId, status: { in: [AlarmStatus.ACTIVE, AlarmStatus.ACKNOWLEDGED] } },
       orderBy: { createdAt: 'desc' },
     });
 

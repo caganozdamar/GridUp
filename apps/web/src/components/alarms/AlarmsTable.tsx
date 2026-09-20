@@ -1,7 +1,14 @@
 import type { AlarmWithPanel } from '@grid-up/shared';
 import { SEVERITY_CLASS, formatDateTime } from '../../utils/status';
 
-export function AlarmsTable({ alarms }: { alarms: AlarmWithPanel[] }) {
+interface AlarmsTableProps {
+  alarms: AlarmWithPanel[];
+  /** Verilirse ACTIVE alarmlar icin "Acknowledge" butonu gosterilir. */
+  onAcknowledge?: (alarmId: string) => void;
+  acknowledgingId?: string | null;
+}
+
+export function AlarmsTable({ alarms, onAcknowledge, acknowledgingId }: AlarmsTableProps) {
   if (alarms.length === 0) {
     return <p className="empty-hint">No alarms found.</p>;
   }
@@ -16,6 +23,7 @@ export function AlarmsTable({ alarms }: { alarms: AlarmWithPanel[] }) {
             <th>Alarm</th>
             <th>Status</th>
             <th>Time</th>
+            {onAcknowledge && <th></th>}
           </tr>
         </thead>
         <tbody>
@@ -34,8 +42,25 @@ export function AlarmsTable({ alarms }: { alarms: AlarmWithPanel[] }) {
               </td>
               <td>
                 <span className={`status-pill ${alarm.status.toLowerCase()}`}>{alarm.status}</span>
+                {alarm.acknowledgedAt && (
+                  <div className="table-subtext">Acknowledged {formatDateTime(alarm.acknowledgedAt)}</div>
+                )}
               </td>
               <td>{formatDateTime(alarm.createdAt)}</td>
+              {onAcknowledge && (
+                <td>
+                  {alarm.status === 'ACTIVE' && (
+                    <button
+                      className="filter-chip"
+                      type="button"
+                      disabled={acknowledgingId === alarm.id}
+                      onClick={() => onAcknowledge(alarm.id)}
+                    >
+                      {acknowledgingId === alarm.id ? 'Acknowledging…' : 'Acknowledge'}
+                    </button>
+                  )}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
