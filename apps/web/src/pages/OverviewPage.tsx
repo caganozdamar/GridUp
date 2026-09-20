@@ -6,6 +6,7 @@ import { ErrorBanner } from '../components/common/ErrorBanner';
 import { PanelStatusTable } from '../components/panels/PanelStatusTable';
 import { RiskDistributionCard } from '../components/dashboard/RiskDistributionCard';
 import { RecentAlarmsCard } from '../components/dashboard/RecentAlarmsCard';
+import { EarlyWarningActivityCard } from '../components/dashboard/EarlyWarningActivityCard';
 import {
   IconAlertOctagon,
   IconAlertTriangle,
@@ -18,6 +19,7 @@ import { usePolling } from '../hooks/usePolling';
 import { useSystemStatus } from '../context/SystemStatusContext';
 import { panelsApi } from '../api/panels';
 import { alarmsApi } from '../api/alarms';
+import { metricsApi } from '../api/metrics';
 import { POLLING_INTERVALS } from '../config';
 
 const RISK_FILTERS: Array<{ label: string; value: RiskLevel | 'ALL' }> = [
@@ -34,6 +36,7 @@ export function OverviewPage() {
     POLLING_INTERVALS.overview,
   );
   const { data: alarms } = usePolling(() => alarmsApi.list(), POLLING_INTERVALS.overview);
+  const { data: operationalMetrics } = usePolling(() => metricsApi.operations(), POLLING_INTERVALS.overview);
 
   const { report } = useSystemStatus();
   useEffect(() => {
@@ -158,6 +161,8 @@ export function OverviewPage() {
             />
             <RecentAlarmsCard alarms={alarms ?? []} />
           </section>
+
+          <EarlyWarningActivityCard metrics={operationalMetrics ?? null} />
         </>
       )}
     </div>

@@ -4,6 +4,7 @@ import { usePanelSensorSnapshot } from '../../hooks/usePanelSensorSnapshot';
 import { formatTime } from '../../utils/status';
 import { POLLING_INTERVALS } from '../../config';
 import { RiskBadge } from '../status/RiskBadge';
+import { DataHealthBadge } from '../decision-support/DataHealthBadge';
 
 const DISPLAY_SENSORS: Array<{ type: SensorType; label: string }> = [
   { type: SensorType.CABLE_TEMPERATURE, label: 'Cable Temp' },
@@ -59,6 +60,9 @@ export function PanelStatusRow({ panel }: { panel: PanelSummary }) {
         ) : (
           <span className="alarm-count-zero">0</span>
         )}
+      </td>
+      <td>
+        <DataHealthBadge dataHealth={panel.dataHealth} />
       </td>
       <td className="table-time">
         {panel.latestRiskScore ? formatTime(panel.latestRiskScore.calculatedAt) : '—'}

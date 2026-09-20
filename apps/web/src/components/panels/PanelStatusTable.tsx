@@ -14,6 +14,7 @@ export function PanelStatusTable({ panels }: { panels: PanelSummary[] }) {
             <th>Risk Level</th>
             <th>Key Sensor Values</th>
             <th>Active Alarms</th>
+            <th>Data Health</th>
             <th>Last Update</th>
           </tr>
         </thead>
@@ -23,7 +24,7 @@ export function PanelStatusTable({ panels }: { panels: PanelSummary[] }) {
           ))}
           {panels.length === 0 && (
             <tr>
-              <td colSpan={8} className="empty-row">
+              <td colSpan={9} className="empty-row">
                 No panels found
               </td>
             </tr>

@@ -1,3 +1,73 @@
+# Code Freeze — Aşama 8-9 Final Validation
+
+## Aşama 9 — Decision Support / Early Warning Intelligence (2026-09-20)
+
+Aşama 9 kapsamında eklenen decision-support katmanı (Time-to-Critical
+estimate, Recommended Actions, Sensor/Panel Data Health, Panel Event
+Timeline, Operational Metrics — bkz. [decision-support.md](decision-support.md))
+canlı, çalışan bir sistem üzerinde doğrulandı. Detaylı sonuçlar için bkz.
+sohbet raporu; özet:
+
+```bash
+npm run build:shared     # OK
+npm run typecheck        # OK — api, scada-gateway, simulator, web, shared
+npm run lint              # OK — aynı pre-existing 1 uyarı (SystemStatusContext.tsx), Aşama 9 dosyalarında 0 uyarı
+npm run build              # OK — api, scada-gateway, simulator, web, shared
+npm run test (api)          # OK — 8 test file, 59 test, hepsi PASS (14 yeni decision-support testi dahil)
+npm run test (scada-gateway) # OK — 3 test file, 22 test, hepsi PASS (değişmedi)
+npm run test (simulator)     # OK — 2 test file, 16 test, hepsi PASS (değişmedi)
+npm run test:e2e (api)        # OK — 5 test file, 24 test, hepsi PASS (9 yeni decision-support e2e testi dahil, gerçek Postgres'e karşı)
+```
+
+Gerçek Postgres + API + simulator + SCADA Gateway ile canlı rehearsal
+(PANO-003):
+
+1. Baseline (`npm run demo:normal`): PANO-003 NORMAL, Data Health `VALID`,
+   `trendEstimate.status = STABLE`, `recommendedActions = []`.
+2. `npm run demo:critical` (COMBINED_FAILURE, PANO-003): risk skoru ~10-15
+   saniye içinde 100/CRITICAL'a çıktı. `trendEstimate.status` `CRITICAL`'a
+   geçti (`"Critical threshold reached."`); `RISING` durumu bu spesifik
+   koşuda REST polling ile yakalanamayacak kadar kısa sürdü — bu,
+   `decision-support.md`'de belgelenen bilinen bir sınırlamadır (simulator
+   matematiği bunun için değiştirilmedi). `recommendedActions` beklenen
+   5 kaydı `URGENT` priority ile döndürdü
+   (`HIGH_TEMPERATURE/TEMPERATURE_RISE/OVERCURRENT/HIGH_HUMIDITY/MULTI_SENSOR_RISK`).
+3. Timeline (`GET /panels/:id/timeline`) risk level transition'larını,
+   `ALARM_CREATED` ve `NOTIFICATION_SENT` (SMS + WhatsApp) event'lerini
+   newest-first sırayla doğru şekilde içerdi.
+4. `npm run demo:normal`'e dönüldüğünde alarm `RESOLVED` oldu (`resolvedAt`
+   set edildi).
+5. Stale/resilience: simulator durdurulduğunda Data Health ~12 saniye sonra
+   (refresh gerekmeden) `VALID` → `STALE`'e döndü; aynı anda SCADA Gateway
+   (`npm run scada:read -- PANO-003`) `Data Quality: INVALID` gösterdi —
+   iki sistem tutarlı. Simulator yeniden başlatılınca ikisi de `VALID`'e
+   döndü.
+6. `GET /metrics/operations` gerçek DB aggregate değerlerini döndürdü
+   (hard-code edilmemiş — doğrudan Prisma count query'leri ile karşılaştırıldı,
+   bkz. `decision-support.e2e-spec.ts`).
+
+### Aşama 9 known limitations
+
+- **Browser görsel regresyonu bu ortamda da otomatik doğrulanmadı**
+  (Playwright/vb. yok) — aynı Aşama 8 sınırlaması. Yeni endpoint'ler
+  (`/panels/:id/timeline`, `/metrics/operations`) ve mevcut endpoint'lerin
+  backwards-compatible yeni alanları (`dataHealth`, `trendEstimate`,
+  `recommendedActions`) canlı sistemde `curl` ile doğrulandı; `apps/web`
+  production build'i hatasız tamamlandı ve dev server `200 OK` döndü, ancak
+  gerçek tarayıcı konsolunda "0 hata" görsel olarak teyit edilmedi.
+- **`RISING` trend durumu bu COMBINED_FAILURE koşusunda gözlemlenemedi** —
+  yalnızca unit testlerdeki sentetik veriyle doğrulandı
+  (`trend-estimate.util.spec.ts`). Gerçek demo sırasında jüriye `RISING`
+  durumunu güvenilir şekilde göstermek için PANO-003 dışında daha yavaş
+  yükselen bir panoda (örn. `OVERHEATING` senaryosu, `TARGET_PANEL_CODE`
+  farklı bir pano) prova yapılması önerilir — simulator matematiği bunun
+  için kasıtlı olarak değiştirilmedi (bkz. decision-support.md).
+- Yeni migration yok, mevcut demo verisi silinmedi, risk score formülü/
+  threshold/simulator/alarm/anomaly/notification/Modbus/SCADA davranışı
+  değiştirilmedi.
+
+---
+
 # Code Freeze — Aşama 8 Final Validation
 
 ## Validated date/time
@@ -124,5 +194,6 @@ push veya tag işlemi yapılmamıştır**.
 | ----- | ------ |
 | [demo-checklist.md](demo-checklist.md) | Pre-flight checklist |
 | [demo-script.md](demo-script.md) | Jüri demo akışı |
+| [decision-support.md](decision-support.md) | Aşama 9: Time-to-Critical, Recommended Actions, Data Health, Timeline, Metrics |
 | [scalability.md](scalability.md) | Ölçek testi detayları |
 | [project-status.md](project-status.md) | Implemented vs Future matrisi |

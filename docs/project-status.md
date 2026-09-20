@@ -18,6 +18,11 @@ amacıdır.
 | SCADA Modbus TCP | IMPLEMENTED PROTOTYPE | Read-only, demo portu 1502; bkz. modbus-register-map.md |
 | On-prem Docker deployment | IMPLEMENTED PROTOTYPE | `docker-compose.onprem.yml`; gerçekten build edilip çalıştırılarak doğrulandı |
 | 100-panel load test | VALIDATED IN TEST | Bkz. scalability.md — tek makine/tek çalıştırma benchmark'ı, production garantisi değil |
+| Trend-based Critical Threshold Estimate | IMPLEMENTED PROTOTYPE | Aşama 9 — `apps/api/src/decision-support/trend-estimate.util.ts`; ML/AI değil, doğrusal trend + guard'lar. Bkz. decision-support.md |
+| Recommended Actions | IMPLEMENTED | Aşama 9 — mevcut anomaly flag'lerinden deterministic, inspection-oriented mapping. Bkz. decision-support.md |
+| Panel Event Timeline | IMPLEMENTED | Aşama 9 — mevcut RiskScore/Anomaly/Alarm/Notification kayıtlarından derived, yeni DB modeli yok. Bkz. decision-support.md |
+| Sensor Data Health | IMPLEMENTED | Aşama 9 — panel seviyesinde VALID/STALE/NO_DATA, SCADA Gateway'in stale-data semantiğiyle tutarlı. Bkz. decision-support.md |
+| Operational Metrics | IMPLEMENTED | Aşama 9 — `GET /metrics/operations`, gerçek DB aggregate'leri (Early Warnings/Critical Escalations/Notifications Delivered). Bkz. decision-support.md |
 | Physical field module | CONCEPT / NEXT HARDWARE STEP | Bkz. field-module.md; hiçbir gerçek donanım inşa edilmedi |
 | Real industrial sensors | NOT YET FIELD VALIDATED | Sensör sınıfları önerilmiştir (bkz. field-module.md), kesin model/vendor seçimi yapılmamıştır |
 | Partial discharge | FUTURE | `SensorType` enum'unda yok; yalnızca kod yorumunda gelecek notu var |
@@ -42,4 +47,5 @@ uca senaryosu (bkz. [code-freeze.md](code-freeze.md)).
 | ----- | ------ |
 | [final-architecture.md](final-architecture.md) | Katman bazlı implemented/concept özeti |
 | [field-module.md](field-module.md) | Future sensor extension detayları |
+| [decision-support.md](decision-support.md) | Aşama 9: Time-to-Critical, Recommended Actions, Data Health, Timeline, Metrics |
 | [code-freeze.md](code-freeze.md) | Son doğrulama sonuçları ve known limitations |
