@@ -5,3 +5,4 @@ export * from './site';
 export * from './anomaly';
 export * from './alarm';
 export * from './notification';
+export * from './decision-support';

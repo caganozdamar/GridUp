@@ -1,8 +1,9 @@
-# Final Demo Script (Aşama 8)
+# Final Demo Script (Aşama 8-9)
 
 3-5 dakikalık jüri demosu için adım adım akış. Demoya başlamadan önce
 [demo-checklist.md](demo-checklist.md) içindeki pre-flight kontrolünü
-tamamlayın.
+tamamlayın. Aşama 9'da eklenen decision-support özelliklerinin arka planı
+için bkz. [decision-support.md](decision-support.md).
 
 ## STEP 1 — Normal Operation
 
@@ -13,7 +14,11 @@ Göster:
 - 5 panel (PANO-001..005)
 - Hepsi NORMAL
 - Aktif alarm yok
+- Data Health kolonu: hepsi `VALID`
 - Canlı sensör verisi (birkaç saniyede bir güncelleniyor)
+- Alt bölümde **Early Warning Activity** (Early Warnings / Critical
+  Escalations / Notifications Delivered) — gerçek DB sayaçları, ana 6 KPI
+  kartının altında, daha düşük görsel hiyerarşide
 
 Anlat:
 
@@ -48,6 +53,26 @@ component skorlarını ve Anomaly listesindeki reasons'ları gösterin (örn.
 "Cable temperature is rising rapidly", "Current and cable temperature are
 rising together").
 
+Risk Analysis bölümünde **Critical Threshold Estimate** kartını gösterin
+(trend-based, ML/AI değil):
+
+```
+Critical Threshold Estimate
+≈ X min
+Risk is rising at +Y points/min.
+```
+
+> Bilinen sınırlama: `COMBINED_FAILURE` senaryosu çok hızlı escalate olduğu
+> için bu `RISING` durumu birkaç saniye görünüp doğrudan `CRITICAL`'a
+> geçebilir — bkz. [decision-support.md](decision-support.md#limitations).
+> Kart altındaki *"Estimate assumes the recent trend continues and is not a
+> failure prediction."* cümlesini vurgulayın.
+
+**Recommended Actions** bölümünü gösterin — deterministic, inspection-oriented
+öneriler (örn. "Inspect conductor loading and compare current with expected
+operating conditions.") ve altındaki *"Inspection guidance only. Follow
+authorized electrical safety procedures."* notunu.
+
 ## STEP 4 — Notification
 
 Alarms sayfasına geçin. PANO-003 için yeni bir CRITICAL alarm ve
@@ -64,6 +89,17 @@ Anlat:
 
 > "Demo provider is used during the hackathon; the provider interface can be
 > connected to the organization's approved messaging gateway."
+
+Panel Detail'e dönüp **Event Timeline**'ı gösterin (newest-first, compact
+enterprise log):
+
+```
+HIGH → CRITICAL     Risk level changed
+Alarm created
+SMS sent
+WhatsApp sent
+WARNING → HIGH       Risk level changed
+```
 
 ## STEP 5 — SCADA
 
