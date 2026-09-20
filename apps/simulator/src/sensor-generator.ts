@@ -6,12 +6,17 @@ export const AMBIENT_RANGE = { min: 24, max: 32 };
 export const CABLE_RANGE = { min: 30, max: 45 };
 export const HUMIDITY_RANGE = { min: 35, max: 60 };
 export const CURRENT_RANGE = { min: 60, max: 110 };
+// Ark flash: pano ici normal optik seviye ~0; akustik: normal ortam gurultusu.
+export const ARC_FLASH_RANGE = { min: 0, max: 3 };
+export const ACOUSTIC_RANGE = { min: 35, max: 45 };
 
 // Her tick'te uygulanabilecek maksimum degisim (bounded drift / random walk adimi).
 const AMBIENT_MAX_STEP = 0.3;
 const CABLE_MAX_STEP = 0.5;
 const HUMIDITY_MAX_STEP = 0.6;
 const CURRENT_MAX_STEP = 4;
+const ARC_FLASH_NOISE_STEP = 0.4;
+const ACOUSTIC_NOISE_STEP = 1;
 
 // Kablo sicakligi, akimin range icindeki oranina dogru yavasca cekilir.
 const CABLE_CURRENT_PULL_FACTOR = 0.15;
@@ -35,6 +40,16 @@ export function randomInitialState(): PanelSensorState {
     cableTemperature: randomInRange(CABLE_RANGE.min, CABLE_RANGE.max),
     humidity: randomInRange(HUMIDITY_RANGE.min, HUMIDITY_RANGE.max),
     current: randomInRange(CURRENT_RANGE.min, CURRENT_RANGE.max),
+    arcFlash: randomInRange(ARC_FLASH_RANGE.min, ARC_FLASH_RANGE.max),
+    acoustic: randomInRange(ACOUSTIC_RANGE.min, ACOUSTIC_RANGE.max),
+  };
+}
+
+/** Ark flash ve akustik kanallarinin sakin (arizasiz) evrimi. */
+function nextQuietDischargeState(prev: PanelSensorState): Pick<PanelSensorState, 'arcFlash' | 'acoustic'> {
+  return {
+    arcFlash: boundedWalk(prev.arcFlash, ARC_FLASH_RANGE.min, ARC_FLASH_RANGE.max, ARC_FLASH_NOISE_STEP),
+    acoustic: boundedWalk(prev.acoustic, ACOUSTIC_RANGE.min, ACOUSTIC_RANGE.max, ACOUSTIC_NOISE_STEP),
   };
 }
 
@@ -56,7 +71,7 @@ function nextNormalState(prev: PanelSensorState): PanelSensorState {
 
   const humidity = boundedWalk(prev.humidity, HUMIDITY_RANGE.min, HUMIDITY_RANGE.max, HUMIDITY_MAX_STEP);
 
-  return { ambientTemperature, cableTemperature, humidity, current };
+  return { ambientTemperature, cableTemperature, humidity, current, ...nextQuietDischargeState(prev) };
 }
 
 // --- Failure scenarios (Asama 4 madde 10) ---
@@ -112,7 +127,7 @@ function nextOverheatingState(prev: PanelSensorState): PanelSensorState {
   );
   const humidity = boundedWalk(prev.humidity, HUMIDITY_RANGE.min, HUMIDITY_RANGE.max, HUMIDITY_MAX_STEP);
 
-  return { ambientTemperature, cableTemperature, humidity, current };
+  return { ambientTemperature, cableTemperature, humidity, current, ...nextQuietDischargeState(prev) };
 }
 
 function nextOvercurrentState(prev: PanelSensorState): PanelSensorState {
@@ -133,7 +148,7 @@ function nextOvercurrentState(prev: PanelSensorState): PanelSensorState {
   );
   const humidity = boundedWalk(prev.humidity, HUMIDITY_RANGE.min, HUMIDITY_RANGE.max, HUMIDITY_MAX_STEP);
 
-  return { ambientTemperature, cableTemperature, humidity, current };
+  return { ambientTemperature, cableTemperature, humidity, current, ...nextQuietDischargeState(prev) };
 }
 
 function nextHighHumidityState(prev: PanelSensorState): PanelSensorState {
@@ -148,7 +163,7 @@ function nextHighHumidityState(prev: PanelSensorState): PanelSensorState {
   const cableTemperature = boundedWalk(prev.cableTemperature, CABLE_RANGE.min, CABLE_RANGE.max, CABLE_MAX_STEP);
   const current = boundedWalk(prev.current, CURRENT_RANGE.min, CURRENT_RANGE.max, CURRENT_MAX_STEP);
 
-  return { ambientTemperature, cableTemperature, humidity, current };
+  return { ambientTemperature, cableTemperature, humidity, current, ...nextQuietDischargeState(prev) };
 }
 
 function nextCombinedFailureState(prev: PanelSensorState): PanelSensorState {
@@ -188,7 +203,30 @@ function nextCombinedFailureState(prev: PanelSensorState): PanelSensorState {
     AMBIENT_MAX_STEP,
   );
 
-  return { ambientTemperature, cableTemperature, humidity, current };
+  return { ambientTemperature, cableTemperature, humidity, current, ...nextQuietDischargeState(prev) };
+}
+
+// --- Ark flash senaryosu ---
+//
+// Diger sensorler NORMAL kalirken pano icinde ani bir isik patlamasi ve
+// beraberinde yuksek bir akustik salinim (ark carpma sesi) olusur. Amac:
+// ark flash'in, sicaklik/akim/nem normalken bile skoru CRITICAL'a
+// cikardigini gostermek (bkz. apps/api/src/risk-engine DISCHARGE_FLOORS).
+const ARC_FLASH_MIN_STEP = 15;
+const ARC_FLASH_MAX_STEP = 30;
+const ARC_FLASH_CEILING = 100;
+const ARC_ACOUSTIC_MIN_STEP = 5;
+const ARC_ACOUSTIC_MAX_STEP = 10;
+const ARC_ACOUSTIC_CEILING = 95;
+
+function nextArcFlashState(prev: PanelSensorState): PanelSensorState {
+  const normal = nextNormalState(prev);
+
+  return {
+    ...normal,
+    arcFlash: riseTowardCeiling(prev.arcFlash, ARC_FLASH_MIN_STEP, ARC_FLASH_MAX_STEP, ARC_FLASH_CEILING),
+    acoustic: riseTowardCeiling(prev.acoustic, ARC_ACOUSTIC_MIN_STEP, ARC_ACOUSTIC_MAX_STEP, ARC_ACOUSTIC_CEILING),
+  };
 }
 
 export function nextPanelState(scenario: SimulationScenario, prev: PanelSensorState): PanelSensorState {
@@ -201,6 +239,8 @@ export function nextPanelState(scenario: SimulationScenario, prev: PanelSensorSt
       return nextOvercurrentState(prev);
     case SimulationScenario.HIGH_HUMIDITY:
       return nextHighHumidityState(prev);
+    case SimulationScenario.ARC_FLASH:
+      return nextArcFlashState(prev);
     case SimulationScenario.COMBINED_FAILURE:
       return nextCombinedFailureState(prev);
     default: {

@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "author": "GRID UP",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+
+    { "type": "wokwi-dht22", "id": "dht", "top": -120, "left": -210, "attrs": {} },
+    { "type": "wokwi-ntc-temperature-sensor", "id": "ntc", "top": 20, "left": -230, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "ct", "top": 150, "left": -240, "attrs": {} },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": 290, "left": -250, "attrs": { "lux": "30000" } },
+    { "type": "wokwi-small-sound-sensor", "id": "mic", "top": 440, "left": -240, "attrs": {} },
+
+    { "type": "wokwi-led", "id": "led_ok", "top": -80, "left": 230, "attrs": { "color": "green", "label": "STATUS" } },
+    { "type": "wokwi-led", "id": "led_alarm", "top": 0, "left": 230, "attrs": { "color": "red", "label": "ALARM" } },
+    { "type": "wokwi-resistor", "id": "r_ok", "top": -20, "left": 290, "attrs": { "value": "330" } },
+    { "type": "wokwi-resistor", "id": "r_alarm", "top": 60, "left": 290, "attrs": { "value": "330" } },
+    { "type": "wokwi-pushbutton-6mm", "id": "btn", "top": 130, "left": 240, "attrs": { "color": "blue", "label": "SCENARIO" } }
+  ],
+  "connections": [
+    ["esp:TX0", "$serialMonitor:RX", "", []],
+    ["esp:RX0", "$serialMonitor:TX", "", []],
+
+    ["dht:VCC", "esp:3V3", "red", []],
+    ["dht:GND", "esp:GND.1", "black", []],
+    ["dht:SDA", "esp:D4", "green", []],
+
+    ["ntc:VCC", "esp:3V3", "red", []],
+    ["ntc:GND", "esp:GND.1", "black", []],
+    ["ntc:OUT", "esp:D34", "orange", []],
+
+    ["ct:VCC", "esp:3V3", "red", []],
+    ["ct:GND", "esp:GND.1", "black", []],
+    ["ct:SIG", "esp:D35", "blue", []],
+
+    ["ldr:VCC", "esp:3V3", "red", []],
+    ["ldr:GND", "esp:GND.1", "black", []],
+    ["ldr:AO", "esp:D32", "yellow", []],
+
+    ["mic:VCC", "esp:3V3", "red", []],
+    ["mic:GND", "esp:GND.1", "black", []],
+    ["mic:AOUT", "esp:D33", "purple", []],
+
+    ["esp:D26", "r_ok:1", "green", []],
+    ["r_ok:2", "led_ok:A", "green", []],
+    ["led_ok:C", "esp:GND.2", "black", []],
+
+    ["esp:D27", "r_alarm:1", "red", []],
+    ["r_alarm:2", "led_alarm:A", "red", []],
+    ["led_alarm:C", "esp:GND.2", "black", []],
+
+    ["btn:1.l", "esp:D25", "blue", []],
+    ["btn:2.l", "esp:GND.2", "black", []]
+  ],
+  "dependencies": {}
+}

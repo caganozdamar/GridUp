@@ -121,32 +121,36 @@ bkz. aşağıdaki tablo. Detaylı gerekçeler ve production notları için ayrı
   Mümkün olduğunca **iletkeni kesmeden** (non-invasive) ölçüm yaklaşımı
   esastır (bkz. "Low-Risk Installation Concept" bölümü aşağıda).
 
-## Future / Extended Module — bugün ÇALIŞMIYOR
+## Genişletilmiş sensörler — ark flaş ve akustik / kısmi deşarj
 
-`packages/shared/src/sensor.ts` içindeki yorum satırı, gelecekte eklenebilecek
-sensör tiplerine açıkça işaret eder:
+Backend ve simülatör (`apps/simulator`) artık iki ek kanalı destekler (simüle edilmiş veriyle):
 
-```ts
-// Not: PARTIAL_DISCHARGE, ARC_FLASH, ACOUSTIC gelecekte buraya eklenebilir.
-```
+| Kanal | `SensorType` | Birim | Ne ölçer | Gerçek sensör sınıfı (önerilen, doğrulanmadı) |
+| ----- | ------------ | ----- | -------- | --------------------------------------------- |
+| Ark flaş | `ARC_FLASH` | % (optik yoğunluk) | Pano içinde ani, güçlü ışık patlaması | Fotodiyot / optik ark sensörü |
+| Akustik / kısmi deşarj | `ACOUSTIC` | dB | Deşarj / ark çıtırtısı kaynaklı ses seviyesi | MEMS mikrofon / ultrasonik sensör |
 
-Bunlar **kod tabanında tanımlı DEĞİLDİR** — `SensorType` enum'unda yoktur,
-Risk Engine'de karşılıkları yoktur, simulator'da üretilmezler, Modbus register
-haritasında yer almazlar. Aşağıdaki liste sadece bir gelecek planlama
-notudur, mevcut sistemin bir parçası değildir:
+Risk motoru bu iki kanalı diğerlerinden farklı ele alır
+(`apps/api/src/risk-engine`):
 
-| Mevcut prototip (çalışıyor) | Future / Extended Module (çalışmıyor, planlama notu) |
-| ---------------------------- | ------------------------------------------------------ |
-| ✓ Ambient Temperature        | ○ Partial Discharge                                    |
-| ✓ Cable Temperature          | ○ Acoustic (örn. ark/boşalma sesi tespiti)              |
-| ✓ Humidity                   | ○ Arc Flash / optical sensing                          |
-| ✓ Current                    |                                                          |
+- **Ağırlıklı toplama girmezler.** Ark flaş güvenlik-kritik bir olaydır;
+  diğer sensörler normalken bile skoru düşük tutmamalıdır. Bunun yerine nihai
+  skora **taban (floor)** olurlar: skor ≥ ark flaş riski × 1.0 ve ≥ akustik
+  risk × 0.7 (+ nem korelasyon bonusu). Sonuç: güçlü bir ark tek başına
+  CRITICAL üretir; yalnızca yüksek ses ise en fazla HIGH üretir (gürültü tek
+  başına ark kanıtı değildir).
+- **Anlık değil, pencere zirvesi** değerlendirilir: kısa süren bir ark,
+  sonraki okumada 0'a dönse bile analiz penceresi (10 okuma) boyunca görünür
+  kalır.
+- Yeni anomali tipleri: `ARC_FLASH`, `PARTIAL_DISCHARGE`. Alarm başlığında ark
+  flaş her zaman önceliklidir ("Critical arc flash risk detected").
+- Modbus'ta 41001+ genişletilmiş bloğu ([modbus-register-map.md](modbus-register-map.md)).
 
-Bu üç genişleme noktası, OG hücrelerinde kısmi deşarj (partial discharge) ve
-ark tespiti gibi daha ileri seviye izleme senaryoları için gelecekte
-değerlendirilebilir; ancak bunlar için hem donanım hem de Risk Engine
-tarafında (yeni component/ağırlık/anchor tanımları) ayrı bir geliştirme
-gerekir. Bkz. [project-status.md](project-status.md).
+> **Dürüst çerçeve:** Akustik kanal bir **kısmi deşarj göstergesi**dir.
+> Gerçek kısmi deşarj ölçümü (UHF, TEV, HFCT) çok daha özel donanım gerektirir
+> ve bu prototipin kapsamı dışındadır. Ark flaş ve akustik değerler şu an
+> yalnızca simülatörün sentetik senaryosundan gelir (`npm run demo:arc`);
+> gerçek sensörle saha doğrulaması yapılmamıştır.
 
 ## Low-Risk Installation — tasarım prensipleri
 

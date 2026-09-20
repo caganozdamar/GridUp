@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getRegisterStartAddress } from './register-map.js';
+import { ExtendedRegisterOffset, getExtendedRegisterStartAddress, getRegisterStartAddress } from './register-map.js';
 import { RegisterStore } from './register-store.js';
 import type { ScadaPanelSnapshot } from './types.js';
 
@@ -17,6 +17,10 @@ function snapshot(overrides: Partial<ScadaPanelSnapshot> = {}): ScadaPanelSnapsh
     cableTemperature: 81.4,
     humidity: 76.2,
     current: 168.4,
+    arcFlash: 55.5,
+    acoustic: 72.0,
+    arcFlashActive: true,
+    partialDischargeActive: true,
     activeAlarm: true,
     activeAnomalyCount: 4,
     lastReadingAt: new Date(NOW).toISOString(),
@@ -39,6 +43,23 @@ describe('RegisterStore', () => {
     for (let i = 0; i < 10; i++) {
       expect(store.readRegister(neighbourStart + i)).toBe(0);
     }
+  });
+
+  it('writes arc flash / acoustic into the extended block without touching the core block', () => {
+    const store = new RegisterStore();
+    store.updateSnapshots([snapshot()]);
+    store.recompute(NOW, STALE_MS);
+
+    const ext = getExtendedRegisterStartAddress(2); // PANO-003
+    expect(store.readRegister(ext + ExtendedRegisterOffset.ARC_FLASH_X10)).toBe(555);
+    expect(store.readRegister(ext + ExtendedRegisterOffset.ACOUSTIC_X10)).toBe(720);
+    expect(store.readRegister(ext + ExtendedRegisterOffset.ARC_FLASH_ACTIVE)).toBe(1);
+    expect(store.readRegister(ext + ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE)).toBe(1);
+
+    // Core block layout is unchanged (backward compatible).
+    const core = getRegisterStartAddress(2);
+    expect(core).toBe(20);
+    expect(store.readRegister(core)).toBe(94);
   });
 
   it('reports and skips panel codes that do not fit the Modbus mapping', () => {

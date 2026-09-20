@@ -3,6 +3,8 @@ import {
   MODBUS_DATA_QUALITY,
   MODBUS_PANEL_STATUS,
   MODBUS_RISK_LEVEL,
+  EXTENDED_REGISTERS_PER_PANEL,
+  ExtendedRegisterOffset,
   REGISTERS_PER_PANEL,
   RegisterOffset,
 } from './register-map.js';
@@ -68,6 +70,24 @@ export function encodePanelRegisters(snapshot: ScadaPanelSnapshot, now: number, 
   registers[RegisterOffset.DATA_QUALITY] = isSnapshotFresh(snapshot.lastReadingAt, now, staleMs)
     ? MODBUS_DATA_QUALITY.VALID
     : MODBUS_DATA_QUALITY.INVALID;
+
+  return registers;
+}
+
+/**
+ * Genisletilmis blok: ark flash (% x10), akustik (dB x10) ve iki aktif-olay
+ * bayragi. Cekirdek bloktaki Data Quality stale kuralindan bagimsiz, son
+ * bilinen degerleri tasir.
+ */
+export function encodeExtendedRegisters(snapshot: ScadaPanelSnapshot): number[] {
+  const registers = Array.from<number>({ length: EXTENDED_REGISTERS_PER_PANEL }).fill(0);
+
+  registers[ExtendedRegisterOffset.ARC_FLASH_X10] = scaleX10(snapshot.arcFlash);
+  registers[ExtendedRegisterOffset.ACOUSTIC_X10] = scaleX10(snapshot.acoustic);
+  registers[ExtendedRegisterOffset.ARC_FLASH_ACTIVE] = snapshot.arcFlashActive ? MODBUS_BOOL.YES : MODBUS_BOOL.NO;
+  registers[ExtendedRegisterOffset.PARTIAL_DISCHARGE_ACTIVE] = snapshot.partialDischargeActive
+    ? MODBUS_BOOL.YES
+    : MODBUS_BOOL.NO;
 
   return registers;
 }

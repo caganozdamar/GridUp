@@ -26,6 +26,10 @@ export interface PanelSensorState {
   cableTemperature: number;
   humidity: number;
   current: number;
+  /** Ark flash optik yogunlugu (%). */
+  arcFlash: number;
+  /** Akustik seviye (dB) - kismi desarj / ark gostergesi. */
+  acoustic: number;
 }
 
 export interface BatchReadingInput {

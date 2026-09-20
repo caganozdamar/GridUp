@@ -7,11 +7,15 @@ import { nextPanelState, randomInitialState } from './sensor-generator.js';
 import { SimulationScenario } from './scenario.js';
 import type { BatchReadingInput, DiscoveredPanel, PanelSensorState } from './types.js';
 
-const SENSOR_TYPE_TO_STATE_KEY: Record<SensorType, keyof PanelSensorState> = {
+// Simulator'un urettigi sensor tipleri. Burada olmayan (gelecekte eklenecek)
+// tipler icin okuma GONDERILMEZ; aksi halde bilinmeyen anahtar NaN uretirdi.
+const SENSOR_TYPE_TO_STATE_KEY: Partial<Record<SensorType, keyof PanelSensorState>> = {
   [SensorType.AMBIENT_TEMPERATURE]: 'ambientTemperature',
   [SensorType.CABLE_TEMPERATURE]: 'cableTemperature',
   [SensorType.HUMIDITY]: 'humidity',
   [SensorType.CURRENT]: 'current',
+  [SensorType.ARC_FLASH]: 'arcFlash',
+  [SensorType.ACOUSTIC]: 'acoustic',
 };
 
 const DISCOVERY_RETRY_ATTEMPTS = 5;
@@ -63,6 +67,7 @@ function buildReadings(
     for (const [type, sensor] of Object.entries(panel.sensorsByType)) {
       if (!sensor) continue;
       const stateKey = SENSOR_TYPE_TO_STATE_KEY[type as SensorType];
+      if (!stateKey) continue;
       readings.push({ sensorId: sensor.id, value: nextState[stateKey], timestamp });
     }
   }

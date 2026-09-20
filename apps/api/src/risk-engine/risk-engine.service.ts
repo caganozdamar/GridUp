@@ -18,6 +18,8 @@ const RELEVANT_SENSOR_TYPES: PrismaSensorType[] = [
   PrismaSensorType.CABLE_TEMPERATURE,
   PrismaSensorType.HUMIDITY,
   PrismaSensorType.CURRENT,
+  PrismaSensorType.ARC_FLASH,
+  PrismaSensorType.ACOUSTIC,
 ];
 
 export interface PanelRiskAnalysis extends RiskExplanationResult {
@@ -161,6 +163,20 @@ export class RiskEngineService {
         message: 'Humidity has reached a high-risk level',
       },
       {
+        type: AnomalyType.ARC_FLASH,
+        active: analysis.flags.arcFlash,
+        severityScore: analysis.components.arcFlash,
+        sensorType: SensorType.ARC_FLASH,
+        message: 'Arc flash event detected inside the panel',
+      },
+      {
+        type: AnomalyType.PARTIAL_DISCHARGE,
+        active: analysis.flags.partialDischarge,
+        severityScore: analysis.components.acoustic,
+        sensorType: SensorType.ACOUSTIC,
+        message: 'Acoustic activity indicates possible partial discharge',
+      },
+      {
         type: AnomalyType.MULTI_SENSOR_RISK,
         active: analysis.flags.multiSensorRisk,
         severityScore: analysis.score,
@@ -256,11 +272,15 @@ export class RiskEngineService {
 
   private buildAlarmTitle(components: RiskComponents, severity: Severity): string {
     const prefix = severity === Severity.CRITICAL ? 'Critical' : 'Elevated';
-    const dominant = Math.max(components.temperature, components.current, components.humidity);
+    // Ark flash guvenlik-kritik oldugu icin baslikta her zaman onceliklidir.
+    if (components.arcFlash >= 40) return `${prefix} arc flash risk detected`;
+
+    const dominant = Math.max(components.temperature, components.current, components.humidity, components.acoustic);
 
     if (dominant > 0 && dominant === components.temperature) return `${prefix} overheating risk detected`;
     if (dominant > 0 && dominant === components.current) return `${prefix} overcurrent risk detected`;
     if (dominant > 0 && dominant === components.humidity) return `${prefix} humidity risk detected`;
+    if (dominant > 0 && dominant === components.acoustic) return `${prefix} partial discharge risk detected`;
     return `${prefix} panel risk detected`;
   }
 }

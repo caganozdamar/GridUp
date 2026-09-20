@@ -101,6 +101,37 @@ Bu eşlemeler `apps/scada-gateway/src/register-map.ts` içindeki
 `MODBUS_RISK_LEVEL`, `MODBUS_PANEL_STATUS`, `MODBUS_BOOL`,
 `MODBUS_DATA_QUALITY` sabitlerinde tek yerde tanımlıdır.
 
+## Genişletilmiş blok: ark flaş ve akustik / kısmi deşarj
+
+Çekirdek 10-register'lık bloğun adresleri **değişmemiştir** (mevcut SCADA
+eşlemeleri bozulmaz). Ark flaş ve akustik/kısmi deşarj verisi, çekirdek
+bölgenin **hemen ardında** ayrı bir bölgede yer alır: 0-based adres `1000`,
+label `41001`'den başlar. Her pano için **4 register**, toplam 100 pano ×
+4 = 400 register (tüm adres alanı: 1400 register).
+
+```
+extendedLabel(PANO-NNN) = 41001 + (NNN - 1) * 4
+```
+
+| Pano | Başlangıç adresi (0-based) | Başlangıç label |
+| ---- | -------------------------- | --------------- |
+| PANO-001 | 1000 | 41001 |
+| PANO-003 | 1008 | 41009 |
+| PANO-100 | 1396 | 41397 |
+
+| Offset | Alan | Tip / Birim | Açıklama |
+| ------ | ---- | ----------- | -------- |
+| 0 | Arc Flash | Integer, % × 10 | Optik yoğunluk. 100.0% → 1000. Sensör yoksa 0 |
+| 1 | Acoustic | Integer, dB × 10 | Pano içi ses seviyesi. 68.3 dB → 683. Sensör yoksa 0 |
+| 2 | Arc Flash Active | Bool (0/1) | Aktif (çözülmemiş) `ARC_FLASH` anomalisi var |
+| 3 | Partial Discharge Active | Bool (0/1) | Aktif (çözülmemiş) `PARTIAL_DISCHARGE` anomalisi var |
+
+Bu bölgedeki değerler de çekirdek bloktaki gibi `×10` ölçeklenir ve
+`NaN`/`Infinity` yerine `0` yazılır. Data Quality register'ı (offset 9)
+yalnızca çekirdek blokta tutulur; genişletilmiş değerler son bilinen
+değerlerini korur. Kaynak: `register-map.ts` (`ExtendedRegisterOffset`,
+`getExtendedRegisterStartAddress`), `encode.ts` (`encodeExtendedRegisters`).
+
 ## Ölçeklendirme (×10) ve clamp/validation kuralları
 
 - Ondalıklı sensör değerleri (`°C`, `%`, `A`) tam sayı register'a yazılabilmesi
@@ -185,6 +216,16 @@ Panel: PANO-003
 40029 Active Anomalies     : 5
 40030 Data Quality         : VALID
 ----------------------------------------
+```
+
+Ark flaş senaryosunda (`GRIDUP_SCENARIO=ARC_FLASH`, bkz. `firmware/`) aynı
+komut genişletilmiş bloğu da gösterir:
+
+```
+41009 Arc Flash            : 100.0 %
+41010 Acoustic             : 95.0 dB
+41011 Arc Flash Active     : YES
+41012 Partial Discharge    : YES
 ```
 
 (Bu çıktı `npm run scada:read -- PANO-003` ile gerçek, çalışan bir sistemden
