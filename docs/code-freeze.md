@@ -38,6 +38,18 @@ register haritası veya SCADA Gateway davranışı bu reconciliation sırasında
 **değiştirilmedi** — yalnızca yeni anomaly tiplerine eksik olan
 decision-support mapping'i tamamlandı.
 
+Push denemesi sırasında `origin/main` tekrar ilerledi (bu depoda eşzamanlı
+başka çalışma devam ediyor): bir **HTTP gateway notification provider**
+commit'i (`docs/notification-policy.md`, `notifications.service.ts`,
+`Notification.attempts` alanı + yeni bir Prisma migration'ı — bkz. commit
+mesajı "Add an HTTP gateway provider for SMS/WhatsApp alerts"). Bu da merge
+edildi; tek gerçek çakışma `README.md`'deki dokümantasyon tablosuydu (iki
+tarafın aynı satırları farklı ifadelerle güncellemesi), elle çözüldü. Kod
+tarafında decision-support katmanıyla çakışma **yoktu** — yalnızca yeni
+migration için `prisma generate`/`migrate deploy` tekrar çalıştırıldı ve tüm
+doğrulama komutları üçüncü kez baştan sona koşturuldu (aşağıdaki sayılar bu
+son çalıştırmayı yansıtır: api 83 unit + 27 e2e test, hepsi PASS).
+
 ```bash
 npm run build:shared     # OK
 npm run typecheck        # OK — api, scada-gateway, simulator, web, shared
