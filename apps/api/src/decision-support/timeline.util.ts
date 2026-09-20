@@ -32,6 +32,8 @@ export interface AlarmRow {
   severity: Severity;
   title: string;
   createdAt: Date;
+  // Opsiyonel: onaylama ozelliginden once yazilmis satirlar/testler bu alani vermez.
+  acknowledgedAt?: Date | null;
   resolvedAt: Date | null;
 }
 
@@ -111,6 +113,15 @@ function alarmEvents(alarms: AlarmRow[]): TimelineEvent[] {
       detail: alarm.title,
       severity: alarm.severity,
     });
+    if (alarm.acknowledgedAt) {
+      events.push({
+        type: TimelineEventType.ALARM_ACKNOWLEDGED,
+        timestamp: alarm.acknowledgedAt.toISOString(),
+        title: 'Alarm acknowledged',
+        detail: alarm.title,
+        severity: alarm.severity,
+      });
+    }
     if (alarm.resolvedAt) {
       events.push({
         type: TimelineEventType.ALARM_RESOLVED,

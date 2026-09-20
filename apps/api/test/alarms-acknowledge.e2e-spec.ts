@@ -119,7 +119,10 @@ describe('Alarm acknowledge (e2e, real DB)', () => {
 
       // Daha yeni, normal reading'ler: son 10 reading'lik pencere artik normal.
       await ctx.feed(30, 60, 60_000);
-      await riskEngine.analyzePanels([ctx.panel.id]);
+      // Histerezis: alarm 5 ARDISIK normal analizden sonra cozulur.
+      for (let tick = 0; tick < 5; tick++) {
+        await riskEngine.analyzePanels([ctx.panel.id]);
+      }
 
       const resolved = await prisma.alarm.findUnique({ where: { id: ctx.alarm.id } });
       expect(resolved!.status).toBe('RESOLVED');

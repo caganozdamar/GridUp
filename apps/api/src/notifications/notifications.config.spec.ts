@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { dispatchMode, parseRecipients } from './notifications.config.js';
+import { dispatchMode, notificationCooldownMs, parseRecipients } from './notifications.config.js';
 
 describe('parseRecipients', () => {
   it('splits, trims and de-duplicates a comma separated list', () => {
@@ -28,5 +28,29 @@ describe('dispatchMode', () => {
   it('can be forced with NOTIFICATION_DISPATCH', () => {
     process.env.NOTIFICATION_DISPATCH = 'inline';
     expect(dispatchMode('http')).toBe('inline');
+  });
+});
+
+describe('notificationCooldownMs', () => {
+  afterEach(() => {
+    delete process.env.NOTIFICATION_COOLDOWN_MS;
+  });
+
+  it('defaults to two minutes', () => {
+    expect(notificationCooldownMs()).toBe(120_000);
+  });
+
+  it('can be changed or disabled with NOTIFICATION_COOLDOWN_MS', () => {
+    process.env.NOTIFICATION_COOLDOWN_MS = '30000';
+    expect(notificationCooldownMs()).toBe(30_000);
+    process.env.NOTIFICATION_COOLDOWN_MS = '0';
+    expect(notificationCooldownMs()).toBe(0);
+  });
+
+  it('ignores garbage and negative values', () => {
+    process.env.NOTIFICATION_COOLDOWN_MS = 'soon';
+    expect(notificationCooldownMs()).toBe(120_000);
+    process.env.NOTIFICATION_COOLDOWN_MS = '-5';
+    expect(notificationCooldownMs()).toBe(120_000);
   });
 });

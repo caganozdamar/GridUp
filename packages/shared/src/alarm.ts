@@ -6,6 +6,11 @@ export enum AlarmStatus {
   RESOLVED = 'RESOLVED',
 }
 
+export enum AlarmKind {
+  RISK = 'RISK',
+  MODULE_OFFLINE = 'MODULE_OFFLINE',
+}
+
 export interface Alarm {
   id: string;
   panelId: string;
@@ -13,6 +18,7 @@ export interface Alarm {
   severity: Severity;
   title: string;
   message: string;
+  kind: AlarmKind;
   status: AlarmStatus;
   createdAt: string;
   acknowledgedAt: string | null;

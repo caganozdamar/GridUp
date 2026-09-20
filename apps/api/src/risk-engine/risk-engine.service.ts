@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import {
+  AlarmKind,
   AlarmStatus,
   AnomalyType,
   Severity,
@@ -10,6 +11,7 @@ import { RiskLevel, SensorType, type RiskComponents } from '@grid-up/shared';
 import { PrismaService } from '../prisma/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { ANALYSIS_WINDOW_SIZE } from './risk-engine.config.js';
+import { alarmPolicy } from './alarm-policy.config.js';
 import { computeSensorStats, type SensorStats } from './risk-math.util.js';
 import { computeRiskExplanation, type RiskExplanationResult } from './risk-scoring.js';
 
@@ -211,16 +213,24 @@ export class RiskEngineService {
   private async reconcileAlarms(analysis: PanelRiskAnalysis): Promise<void> {
     const shouldAlarm = analysis.level === RiskLevel.HIGH || analysis.level === RiskLevel.CRITICAL;
 
-    // Onaylanmis (ACKNOWLEDGED) alarm da acik sayilir; aksi halde operator
-    // onayladiktan sonraki ilk tick'te ayni durum icin yeni alarm ve yeni
-    // bildirim uretilirdi.
+    // Sadece RISK alarmlari: MODULE_OFFLINE alarmi baska bir yasam dongusune
+    // sahiptir (bkz. module-health). Onaylanmis (ACKNOWLEDGED) alarm da acik
+    // sayilir; aksi halde operator onayladiktan sonraki ilk tick'te ayni durum
+    // icin yeni alarm ve yeni bildirim uretilirdi.
     const activeAlarm = await this.prisma.alarm.findFirst({
-      where: { panelId: analysis.panelId, status: { in: [AlarmStatus.ACTIVE, AlarmStatus.ACKNOWLEDGED] } },
+      where: {
+        panelId: analysis.panelId,
+        kind: AlarmKind.RISK,
+        status: { in: [AlarmStatus.ACTIVE, AlarmStatus.ACKNOWLEDGED] },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
     if (!shouldAlarm) {
-      if (activeAlarm) {
+      // Histerezis: alarm, risk ANCAK arka arkaya N analiz boyunca alarm
+      // bandinin altinda kalirsa cozulur. Tek bir dusuk okuma alarmi kapatip
+      // bir sonraki tick'te yeniden acmaz (ve yeni bildirim uretmez).
+      if (activeAlarm && (await this.hasBeenCalmLongEnough(analysis.panelId))) {
         await this.prisma.alarm.update({
           where: { id: activeAlarm.id },
           data: { status: AlarmStatus.RESOLVED, resolvedAt: new Date() },
@@ -232,12 +242,14 @@ export class RiskEngineService {
     const severity = analysis.level === RiskLevel.CRITICAL ? Severity.CRITICAL : Severity.HIGH;
 
     if (activeAlarm) {
-      if (activeAlarm.severity === severity) {
-        // Ayni seviyede aktif alarm zaten var; duplicate olusturma.
+      // Seviye yalnizca YUKARI degisirse (HIGH -> CRITICAL) yeni alarm/bildirim
+      // uretilir: kotulesen durum tekrar duyurulmali. Ayni seviye ya da dusus
+      // (CRITICAL -> HIGH) acik alarmi oldugu gibi birakir; risk hala alarm
+      // bandinda oldugu icin alarm kapanmaz ve seviye sinirinda gidip gelen
+      // skor her tick yeni SMS uretmez.
+      if (severity !== Severity.CRITICAL || activeAlarm.severity === Severity.CRITICAL) {
         return;
       }
-      // Seviye degisti (orn. HIGH -> CRITICAL ya da CRITICAL -> HIGH):
-      // eskiyi kapat, guncel seviyeyi yansitan yeni bir alarm ac.
       await this.prisma.alarm.update({
         where: { id: activeAlarm.id },
         data: { status: AlarmStatus.RESOLVED, resolvedAt: new Date() },
@@ -271,6 +283,23 @@ export class RiskEngineService {
     } catch (error) {
       this.logger.error(`Notification trigger failed for alarm ${createdAlarm.id}: ${(error as Error).message}`);
     }
+  }
+
+  // Son N RiskScore kaydinin (bu analizin kaydi dahil) hepsi alarm bandinin
+  // altindaysa true. RiskScore her analizde kalici yazildigi icin durum DB'den
+  // turetilir: API yeniden baslasa da sayac kaybolmaz.
+  private async hasBeenCalmLongEnough(panelId: string): Promise<boolean> {
+    const { resolveAfterTicks } = alarmPolicy();
+    const recent = await this.prisma.riskScore.findMany({
+      where: { panelId },
+      orderBy: { calculatedAt: 'desc' },
+      take: resolveAfterTicks,
+      select: { level: true },
+    });
+    return (
+      recent.length >= resolveAfterTicks &&
+      recent.every((row) => row.level !== PrismaRiskLevel.HIGH && row.level !== PrismaRiskLevel.CRITICAL)
+    );
   }
 
   private buildAlarmTitle(components: RiskComponents, severity: Severity): string {

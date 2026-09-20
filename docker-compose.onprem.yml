@@ -65,6 +65,9 @@ services:
       # http provider icin (NOTIFICATION_PROVIDER=http): sirket ici SMS gateway'i
       NOTIFICATION_GATEWAY_URL: ${NOTIFICATION_GATEWAY_URL:-}
       NOTIFICATION_GATEWAY_TOKEN: ${NOTIFICATION_GATEWAY_TOKEN:-}
+      ALARM_RESOLVE_AFTER_TICKS: ${ALARM_RESOLVE_AFTER_TICKS:-5}
+      MODULE_OFFLINE_AFTER_MS: ${MODULE_OFFLINE_AFTER_MS:-60000}
+      NOTIFICATION_COOLDOWN_MS: ${NOTIFICATION_COOLDOWN_MS:-120000}
     ports:
       # Sadece IT/OT private network icindeki diger makinelerden erisim
       # gerekiyorsa disari acilir; internet'e expose edilmemelidir.

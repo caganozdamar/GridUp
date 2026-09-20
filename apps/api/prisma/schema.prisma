@@ -53,6 +53,14 @@ enum AlarmStatus {
   RESOLVED
 }
 
+// RISK: risk skoruna bagli alarm (HIGH/CRITICAL). MODULE_OFFLINE: panonun hicbir
+// sensorunden bir sure veri gelmedi. Iki tur birbirinin yasam dongusunu
+// (cozulme, seviye degisimi) etkilemez.
+enum AlarmKind {
+  RISK
+  MODULE_OFFLINE
+}
+
 enum NotificationChannel {
   SMS
   WHATSAPP
@@ -168,6 +176,7 @@ model Alarm {
   severity       Severity
   title          String
   message        String
+  kind           AlarmKind   @default(RISK)
   status         AlarmStatus @default(ACTIVE)
   createdAt      DateTime    @default(now())
   acknowledgedAt DateTime?

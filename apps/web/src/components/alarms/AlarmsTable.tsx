@@ -37,7 +37,10 @@ export function AlarmsTable({ alarms, onAcknowledge, acknowledgingId }: AlarmsTa
                 <span className={`severity-pill ${SEVERITY_CLASS[alarm.severity]}`}>{alarm.severity}</span>
               </td>
               <td>
-                <div className="alarm-title">{alarm.title}</div>
+                <div className="alarm-title">
+                  {alarm.title}
+                  {alarm.kind === 'MODULE_OFFLINE' && <span className="kind-tag">MODULE OFFLINE</span>}
+                </div>
                 <div className="table-subtext">{alarm.message}</div>
               </td>
               <td>

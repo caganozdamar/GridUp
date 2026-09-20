@@ -13,6 +13,7 @@ import { AlarmsModule } from './alarms/alarms.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
 import { ScadaModule } from './scada/scada.module.js';
 import { DecisionSupportModule } from './decision-support/decision-support.module.js';
+import { ModuleHealthModule } from './module-health/module-health.module.js';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { DecisionSupportModule } from './decision-support/decision-support.modul
     NotificationsModule,
     ScadaModule,
     DecisionSupportModule,
+    ModuleHealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
