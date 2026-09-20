@@ -6,7 +6,12 @@ export interface SimulatorConfig {
   scenario: SimulationScenario;
   /** Belirtilmisse, yalnizca bu koddaki pano senaryoyu calistirir; diger tum panolar NORMAL kalir. */
   targetPanelCode?: string;
+  /** Panonun anma akimi (A). Akim okumalari demo olcegine (150 A) gore uretilir ve buna oranla olceklenir. */
+  ratedCurrentA: number;
 }
+
+/** Akim profilinin uretildigi referans anma akimi (A); api risk-engine.config.ts ile ayni deger. */
+export const REFERENCE_RATED_CURRENT_A = 150;
 
 const VALID_SCENARIOS = new Set<string>(Object.values(SimulationScenario));
 
@@ -26,5 +31,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): SimulatorConfi
 
   const targetPanelCode = env.TARGET_PANEL_CODE?.trim() || undefined;
 
-  return { apiBaseUrl, intervalMs, scenario, targetPanelCode };
+  const ratedCurrentA = Number(env.PANEL_RATED_CURRENT_A ?? REFERENCE_RATED_CURRENT_A);
+  if (!Number.isFinite(ratedCurrentA) || ratedCurrentA <= 0) {
+    throw new Error(`Invalid PANEL_RATED_CURRENT_A: ${env.PANEL_RATED_CURRENT_A}`);
+  }
+
+  return { apiBaseUrl, intervalMs, scenario, targetPanelCode, ratedCurrentA };
 }

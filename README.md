@@ -135,8 +135,9 @@ Detaylı formül/ağırlıklar için bkz. `apps/api/src/risk-engine/risk-engine.
 ## Dashboard
 
 React + Vite tabanlı, backend'e polling ile bağlanan bir dashboard:
-**Overview**, **Panels**, **Panel Detail** ve **Alarms** sayfaları. Bkz.
-"Demoyu Çalıştırma" bölümü.
+**Overview**, **Panels**, **Panel Detail**, **Alarms** ve **SCADA** sayfaları.
+Sayfa açıklamaları: [docs/frontend.md](docs/frontend.md).
+Bkz. "Demoyu Çalıştırma" bölümü.
 
 ## Bildirimler
 
@@ -437,6 +438,8 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/architecture.md](docs/architecture.md) | Backend mimarisi (Aşama 1-7) |
 | [docs/on-premise-architecture.md](docs/on-premise-architecture.md) | On-prem Docker dağıtımı, production considerations |
 | [docs/modbus-register-map.md](docs/modbus-register-map.md) | SCADA/Modbus register haritası |
+| [docs/modbus-mapping-table.md](docs/modbus-mapping-table.md) | Modbus haritalama tablosu (MPR-53CS sütun düzeni) |
+| [docs/sensor-modbus-mapping.md](docs/sensor-modbus-mapping.md) | ABB TVOC-2, HFCT30/50 ve enerji analizörü Modbus eşlemesi |
 | [docs/final-architecture.md](docs/final-architecture.md) | Uçtan uca final mimari (field → SCADA) |
 | [docs/field-module.md](docs/field-module.md) | Field Module konsepti |
 | [docs/field-data-contract.md](docs/field-data-contract.md) | Field veri sözleşmesi |
@@ -448,6 +451,9 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |
 | [docs/scalability.md](docs/scalability.md) | 100 panel ölçek testi ve mimarisi |
+| [docs/resource-usage.md](docs/resource-usage.md) | Kaynak kullanımı ölçümü, depolama projeksiyonu, ESP32 ayak izi |
+| [docs/frontend.md](docs/frontend.md) | Frontend sayfaları ve kaynak kod eşlemesi |
+| [docs/demo-rehearsal.md](docs/demo-rehearsal.md) | Demo provası sonuçları ve bulunan sorunlar |
 | [firmware/esp32/README.md](firmware/esp32/README.md) | ESP32 firmware'i: derleme ve doğrulama durumu |
 | [firmware/wokwi/README.md](firmware/wokwi/README.md) | Wokwi devresi, pin tablosu ve ADC dönüşümleri |
 | [docs/demo-script.md](docs/demo-script.md) | Jüri demo akışı |

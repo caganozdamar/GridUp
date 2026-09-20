@@ -29,3 +29,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Uretilen Modbus register CSV (scripts/export-modbus-map.mjs)
+docs/assets/modbus-register-map.csv

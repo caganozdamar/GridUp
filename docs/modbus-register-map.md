@@ -5,6 +5,9 @@ sunduğu Modbus TCP holding register haritasını tanımlar. Merkezi kod
 kaynağı `apps/scada-gateway/src/register-map.ts`'tir — register numarası
 başka hiçbir dosyada hard-code edilmez.
 
+> MPR-53CS sütun düzeninde (ADDRESS/HEX/R-W/RANGE/UNIT/MULTIPLIER/FORMAT) doldurulmuş
+> tablo ve CSV için bkz. [modbus-mapping-table.md](modbus-mapping-table.md).
+
 ## Kapsam ve amaç
 
 GRID UP tarafından hesaplanan risk skoru, sensör değerleri ve alarm/anomali

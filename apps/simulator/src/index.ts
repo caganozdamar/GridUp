@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { SensorType } from '@grid-up/shared';
 import { ApiClient } from './api-client.js';
 import { printTickSummary } from './cli-output.js';
-import { loadConfig, type SimulatorConfig } from './config.js';
+import { loadConfig, REFERENCE_RATED_CURRENT_A, type SimulatorConfig } from './config.js';
 import { nextPanelState, randomInitialState } from './sensor-generator.js';
 import { SimulationScenario } from './scenario.js';
 import type { BatchReadingInput, DiscoveredPanel, PanelSensorState } from './types.js';
@@ -68,7 +68,10 @@ function buildReadings(
       if (!sensor) continue;
       const stateKey = SENSOR_TYPE_TO_STATE_KEY[type as SensorType];
       if (!stateKey) continue;
-      readings.push({ sensorId: sensor.id, value: nextState[stateKey], timestamp });
+      const raw = nextState[stateKey];
+      // Akim, panonun anma akimina oranla olceklenir (yuk yuzdesi sabit kalir).
+      const value = type === SensorType.CURRENT ? raw * (config.ratedCurrentA / REFERENCE_RATED_CURRENT_A) : raw;
+      readings.push({ sensorId: sensor.id, value, timestamp });
     }
   }
 
