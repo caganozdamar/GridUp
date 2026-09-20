@@ -194,14 +194,16 @@ model Notification {
   provider          String
   providerMessageId String?
   errorMessage      String?
+  attempts          Int                 @default(0)
   createdAt         DateTime            @default(now())
   sentAt            DateTime?
 
   alarm Alarm @relation(fields: [alarmId], references: [id], onDelete: Cascade)
 
-  // Asama 6 madde 7: ayni alarm + kanal icin duplicate notification olusmasini
-  // DB seviyesinde engeller (uygulama seviyesindeki kontrole ek olarak).
-  @@unique([alarmId, channel])
+  // Asama 6 madde 7: ayni alarm + kanal + alici icin duplicate notification
+  // olusmasini DB seviyesinde engeller. Alici da anahtarin parcasidir; boylece
+  // bir kanala birden fazla telefon numarasi yazilabilir.
+  @@unique([alarmId, channel, recipient])
   @@index([status])
   @@index([channel])
   @@map("notifications")

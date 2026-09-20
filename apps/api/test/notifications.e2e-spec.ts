@@ -4,6 +4,7 @@ import request from 'supertest';
 import { AppModule } from '../src/app.module.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
 import { RiskEngineService } from '../src/risk-engine/risk-engine.service.js';
+import { NotificationsService } from '../src/notifications/notifications.service.js';
 import {
   NOTIFICATION_PROVIDER,
   type NotificationProvider,
@@ -241,6 +242,7 @@ describe('Notifications provider failure safety (e2e, real DB)', () => {
   }
 
   beforeAll(async () => {
+    process.env.NOTIFICATION_RETRY_BACKOFF_MS = '10';
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
@@ -256,6 +258,7 @@ describe('Notifications provider failure safety (e2e, real DB)', () => {
   });
 
   afterAll(async () => {
+    delete process.env.NOTIFICATION_RETRY_BACKOFF_MS;
     await app.close();
   });
 
@@ -286,6 +289,7 @@ describe('Notifications provider failure safety (e2e, real DB)', () => {
 
       // Provider fails, but analyzePanels must not throw / must not fail ingestion.
       await expect(riskEngine.analyzePanels([panel.id])).resolves.toBeUndefined();
+      await app.get(NotificationsService).drain();
 
       const riskScores = await prisma.riskScore.count({ where: { panelId: panel.id } });
       expect(riskScores).toBe(1);
@@ -299,10 +303,145 @@ describe('Notifications provider failure safety (e2e, real DB)', () => {
       expect(notifications[0].status).toBe('FAILED');
       expect(notifications[0].errorMessage).toContain('Simulated provider outage');
       expect(notifications[0].sentAt).toBeNull();
+      expect(notifications[0].attempts).toBe(3);
     } finally {
       await prisma.sensor.deleteMany({ where: { panelId: panel.id } });
       await prisma.panel.delete({ where: { id: panel.id } });
       await prisma.site.delete({ where: { id: site.id } });
+    }
+  });
+});
+
+describe('Notifications delivery: retries, recipients, background dispatch (e2e, real DB)', () => {
+  let app: INestApplication;
+  let prisma: PrismaService;
+  let riskEngine: RiskEngineService;
+  let notifications: NotificationsService;
+
+  // Ilk `failuresBeforeSuccess` cagrida hata verir, sonra basarili olur.
+  class FlakyNotificationProvider implements NotificationProvider {
+    readonly name = 'flaky-test-provider';
+    static failuresBeforeSuccess = 0;
+    static delayMs = 0;
+    static calls: NotificationSendInput[] = [];
+    async send(input: NotificationSendInput) {
+      FlakyNotificationProvider.calls.push(input);
+      if (FlakyNotificationProvider.delayMs > 0) {
+        await new Promise((resolve) => setTimeout(resolve, FlakyNotificationProvider.delayMs));
+      }
+      if (FlakyNotificationProvider.calls.length <= FlakyNotificationProvider.failuresBeforeSuccess) {
+        throw new Error('Gateway timeout');
+      }
+      return { providerMessageId: `flaky-${FlakyNotificationProvider.calls.length}` };
+    }
+  }
+
+  beforeAll(async () => {
+    process.env.NOTIFICATION_RETRY_BACKOFF_MS = '10';
+    const moduleFixture: TestingModule = await Test.createTestingModule({ imports: [AppModule] })
+      .overrideProvider(NOTIFICATION_PROVIDER)
+      .useClass(FlakyNotificationProvider)
+      .compile();
+
+    app = moduleFixture.createNestApplication();
+    await app.init();
+    prisma = app.get(PrismaService);
+    riskEngine = app.get(RiskEngineService);
+    notifications = app.get(NotificationsService);
+  });
+
+  beforeEach(() => {
+    FlakyNotificationProvider.delayMs = 0;
+  });
+
+  afterAll(async () => {
+    delete process.env.NOTIFICATION_RETRY_BACKOFF_MS;
+    delete process.env.SMS_RECIPIENT;
+    await app.close();
+  });
+
+  async function raiseHighAlarm(suffix: string) {
+    const site = await prisma.site.create({ data: { name: `Delivery Test Site ${suffix}`, code: `NOTIF-DLV-SITE-${suffix}` } });
+    const panel = await prisma.panel.create({
+      data: { siteId: site.id, name: `Delivery Test Panel ${suffix}`, code: `NOTIF-DLV-PANO-${suffix}`, status: 'ONLINE' },
+    });
+    const cable = await prisma.sensor.create({
+      data: { panelId: panel.id, name: 'Cable Temperature', code: `NOTIF-DLV-${suffix}-CABLE`, type: 'CABLE_TEMPERATURE', unit: '°C' },
+    });
+    const current = await prisma.sensor.create({
+      data: { panelId: panel.id, name: 'Current', code: `NOTIF-DLV-${suffix}-CURRENT`, type: 'CURRENT', unit: 'A' },
+    });
+    const now = Date.now();
+    for (let index = 0; index < 10; index++) {
+      await prisma.sensorReading.create({ data: { sensorId: cable.id, value: HIGH_CABLE_TEMP, timestamp: new Date(now + index * 2000) } });
+      await prisma.sensorReading.create({ data: { sensorId: current.id, value: HIGH_CURRENT, timestamp: new Date(now + index * 2000) } });
+    }
+    await riskEngine.analyzePanels([panel.id]);
+    const alarm = await prisma.alarm.findFirst({ where: { panelId: panel.id, status: 'ACTIVE' } });
+    const cleanup = async () => {
+      await prisma.sensor.deleteMany({ where: { panelId: panel.id } });
+      await prisma.panel.delete({ where: { id: panel.id } });
+      await prisma.site.delete({ where: { id: site.id } });
+    };
+    return { alarm: alarm!, cleanup };
+  }
+
+  it('retries a failing gateway and records SENT with the number of attempts', async () => {
+    FlakyNotificationProvider.calls = [];
+    FlakyNotificationProvider.failuresBeforeSuccess = 2;
+    const { alarm, cleanup } = await raiseHighAlarm('RETRY');
+    try {
+      await notifications.drain();
+
+      const rows = await prisma.notification.findMany({ where: { alarmId: alarm.id } });
+      expect(rows).toHaveLength(1);
+      expect(rows[0].status).toBe('SENT');
+      expect(rows[0].attempts).toBe(3);
+      expect(rows[0].providerMessageId).toBe('flaky-3');
+      expect(rows[0].provider).toBe('flaky-test-provider');
+      expect(rows[0].errorMessage).toBeNull();
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it('does not block the risk pipeline while a slow network provider is still delivering', async () => {
+    FlakyNotificationProvider.calls = [];
+    FlakyNotificationProvider.failuresBeforeSuccess = 0;
+    FlakyNotificationProvider.delayMs = 600;
+    const startedAt = Date.now();
+    const { alarm, cleanup } = await raiseHighAlarm('BG');
+    try {
+      // raiseHighAlarm 20 reading yazip analyzePanels'i bekler; gonderim 600 ms
+      // surse de analiz bunu beklememeli ve kayit henuz PENDING olmali.
+      const pending = await prisma.notification.findMany({ where: { alarmId: alarm.id } });
+      expect(pending).toHaveLength(1);
+      expect(pending[0].status).toBe('PENDING');
+      expect(Date.now() - startedAt).toBeLessThan(600 + 400);
+
+      await notifications.drain();
+      const sent = await prisma.notification.findMany({ where: { alarmId: alarm.id } });
+      expect(sent[0].status).toBe('SENT');
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it('sends one notification per configured recipient, with no duplicates', async () => {
+    FlakyNotificationProvider.calls = [];
+    FlakyNotificationProvider.failuresBeforeSuccess = 0;
+    process.env.SMS_RECIPIENT = '+905550000001, +905550000002';
+    const { alarm, cleanup } = await raiseHighAlarm('MULTI');
+    try {
+      await notifications.drain();
+
+      const rows = await prisma.notification.findMany({ where: { alarmId: alarm.id }, orderBy: { recipient: 'asc' } });
+      expect(rows.map((row) => row.recipient)).toEqual(['+905550000001', '+905550000002']);
+      expect(rows.every((row) => row.status === 'SENT')).toBe(true);
+      expect(FlakyNotificationProvider.calls.map((call) => call.recipient).sort()).toEqual(['+905550000001', '+905550000002']);
+    } finally {
+      delete process.env.SMS_RECIPIENT;
+      await cleanup();
     }
   });
 });
