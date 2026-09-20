@@ -131,6 +131,12 @@ saklar. Mimari, gerçek bir SMS/WhatsApp gateway'i ile (risk engine
 değişmeden) kolayca değiştirilebilecek şekilde tasarlanmıştır — bkz.
 [docs/architecture.md](docs/architecture.md#asama-6---alarm-ve-emergency-notification-system).
 
+`NOTIFICATION_PROVIDER=http` ile yapılandırılabilir bir HTTP gateway
+sağlayıcısı da vardır (çoklu alıcı, yeniden deneme, arka plan gönderimi). Gerçek
+hesap olmadan denemek için yerel bir gateway emülatörü içerir
+(`npm run mock:sms`); gerçek bir gateway ile denenmemiştir. Politika ve
+sahada çalışma tasarımı: [docs/notification-policy.md](docs/notification-policy.md).
+
 ## SCADA / Modbus
 
 SCADA Gateway (`apps/scada-gateway`), GRID UP'ın hesapladığı risk skoru ve
@@ -221,6 +227,7 @@ BOM ve 1600 kVA AG panel deployment konsepti dahil:
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
 | [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
 | [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
+| [docs/notification-policy.md](docs/notification-policy.md) | Bildirim politikası ve SMS/WhatsApp gateway entegrasyonu |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |
@@ -336,7 +343,7 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 - API authentication (API key/mTLS)
 - TLS / secure gateway (IT/OT sınırında)
 - Network segmentation ve firewall allow-list (Modbus TCP için)
-- Gerçek SMS/WhatsApp gateway entegrasyonu (`NotificationProvider` arayüzü ile)
+- Gerçek SMS/WhatsApp gateway ile doğrulama (`http` sağlayıcı ve emülatör hazır; gerçek modem/hesapla denenmedi)
 - Gerçek ADM/GDZ SCADA bağlantısı
 - Gerçek endüstriyel sensör/vendor seçimi ve saha doğrulaması (bkz. [docs/field-module.md](docs/field-module.md))
 
@@ -353,6 +360,7 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
 | [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
 | [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
+| [docs/notification-policy.md](docs/notification-policy.md) | Bildirim politikası ve SMS/WhatsApp gateway entegrasyonu |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
 | [docs/bom.md](docs/bom.md) | Demo ve production BOM |

@@ -14,7 +14,7 @@ amacıdır.
 | Anomaly lifecycle | IMPLEMENTED | `HIGH_TEMPERATURE`, `TEMPERATURE_RISE`, `OVERCURRENT`, `HIGH_HUMIDITY`, `MULTI_SENSOR_RISK` |
 | Alarm lifecycle | IMPLEMENTED | ACTIVE → RESOLVED (bu Aşama 8 rehearsal'ında canlı sistemde uçtan uca doğrulandı) |
 | Live dashboard | IMPLEMENTED | Overview / Panels / Panel Detail / Alarms (polling tabanlı) |
-| SMS/WhatsApp workflow | IMPLEMENTED WITH DEMO PROVIDER | `DemoNotificationProvider`; gerçek SMS/WhatsApp gönderilmez, gerçek credential kullanılmaz |
+| SMS/WhatsApp workflow | IMPLEMENTED WITH DEMO PROVIDER + HTTP GATEWAY ADAPTER (TESTED AGAINST AN EMULATOR) | `DemoNotificationProvider` gerçek gönderim yapmaz; `http` sağlayıcı yapılandırılabilir bir gateway'e POST eder, çoklu alıcı, yeniden deneme ve arka plan gönderimi vardır. Gerçek bir SMS/WhatsApp hesabı veya modem ile denenmedi. Bkz. [notification-policy.md](notification-policy.md) |
 | SCADA Modbus TCP | IMPLEMENTED PROTOTYPE | Read-only, demo portu 1502; bkz. modbus-register-map.md |
 | On-prem Docker deployment | IMPLEMENTED PROTOTYPE | `docker-compose.onprem.yml`; gerçekten build edilip çalıştırılarak doğrulandı |
 | 100-panel load test | VALIDATED IN TEST | Bkz. scalability.md — tek makine/tek çalıştırma benchmark'ı, production garantisi değil |
