@@ -1,4 +1,4 @@
-import { Controller, Get, ParseEnumPipe, Query } from '@nestjs/common';
+import { Controller, Get, Param, ParseEnumPipe, Patch, Query } from '@nestjs/common';
 import { AlarmStatus, Severity } from '@prisma/client';
 import { AlarmsService } from './alarms.service.js';
 
@@ -13,5 +13,10 @@ export class GlobalAlarmsController {
     @Query('severity', new ParseEnumPipe(Severity, { optional: true })) severity?: Severity,
   ) {
     return this.alarmsService.findAll(status, severity);
+  }
+
+  @Patch(':id/acknowledge')
+  acknowledge(@Param('id') id: string) {
+    return this.alarmsService.acknowledge(id);
   }
 }

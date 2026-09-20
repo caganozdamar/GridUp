@@ -98,6 +98,9 @@ doğrulanmalıdır. Hiçbiri bu hackathon kapsamında yapılmamıştır.
 - **Ark flaş kanalı:** Wokwi'deki LDR modülünün davranışı (ışık azaldıkça artan
   çıkış) modele özgüdür; gerçek optik sensörün polaritesi ve eşikleri sahada
   ölçülmelidir.
+- **Saha koşulları:** Sıcaklık aralığı, manyetik alan/EMI önlemleri ve çevre
+  etkileri için bkz. [field-conditions.md](field-conditions.md); kurulum ve arıza
+  modları için [installation-and-failure-analysis.md](installation-and-failure-analysis.md).
 - **Güç ve izolasyon:** USB yerine izole DIN-ray güç kaynağı, sigorta,
   aşırı gerilim koruması, EMC/EMI filtreleme (bkz.
   [field-installation.md](field-installation.md)).
@@ -121,6 +124,8 @@ doğrulanmalıdır. Hiçbiri bu hackathon kapsamında yapılmamıştır.
 | [firmware-flow.md](firmware-flow.md) | Firmware akış diyagramı |
 | [hardware-architecture.md](hardware-architecture.md) | Blok diyagram (konsept) |
 | [field-module.md](field-module.md) | Modül konsepti ve sensör yaklaşımı |
+| [field-conditions.md](field-conditions.md) | Sıcaklık, manyetik alan ve çevre etkileri |
+| [installation-and-failure-analysis.md](installation-and-failure-analysis.md) | Kurulum yaklaşımı ve arıza modları analizi |
 | [bom.md](bom.md) | Kavramsal malzeme listesi |
 | [field-installation.md](field-installation.md) | Kurulum ve güç prensipleri |
 | [../firmware/wokwi/README.md](../firmware/wokwi/README.md) | Wokwi diagram'ı ve ADC dönüşümleri |

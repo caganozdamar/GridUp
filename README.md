@@ -83,7 +83,7 @@ Bu bir **npm workspaces monorepo**'dur: `apps/*` ve `packages/*` altındaki her 
 - Gerçek zamanlı, ağırlıklı, trend-duyarlı risk skorlama motoru
 - Çoklu-sensör korelasyon bonusları (örn. akım + kablo sıcaklığı birlikte
   yükseliyorsa ek risk puanı)
-- Anomaly + alarm lifecycle (ACTIVE → RESOLVED)
+- Anomaly + alarm lifecycle (ACTIVE → ACKNOWLEDGED → RESOLVED); operatör alarmı dashboard'dan onaylayabilir
 - SMS/WhatsApp bildirim akışı: demo provider ve yapılandırılabilir HTTP
   gateway provider'ı (çoklu alıcı, yeniden deneme, arka plan gönderimi, audit
   trail); gerçek hesap olmadan denemek için yerel gateway emülatörü
@@ -224,19 +224,21 @@ ve production considerations için bkz.
 
 ## Ölçeklenebilirlik Testi
 
-100 pano / 400 sensör ölçeğinde, mevcut 5 demo panosunu bozmadan, izole/geçici
-test fixture'ları ile gerçek ölçüm almak için:
+100 pano / 600 sensör (pano başına 6 sensör) ölçeğinde, mevcut 5 demo panosunu
+bozmadan, izole/geçici test fixture'ları ile gerçek ölçüm almak için:
 
 ```bash
 node apps/api/scripts/scada-scale-test.mjs
 ```
 
-En son ölçüm (bkz. [docs/scalability.md](docs/scalability.md)):
+En son ölçüm (bkz. [docs/scalability.md](docs/scalability.md)). API tek istekte
+en fazla 500 okuma kabul ettiği için test iki biçimde ölçer: 500'lük parçalarla
+gönderen bir gateway ve kendi küçük batch'ini eşzamanlı gönderen 100 modül:
 
 ```
-100 panels | 400 sensors | 400 readings/tick | 5 ticks
-Total readings sent: 2000 | Failed ticks: 0
-Average batch processing ≈ 1006.9 ms
+100 panels | 600 sensors | 600 readings/tick | 5 ticks per mode
+Gateway (500-reading chunks)  : average tick ≈ 1482 ms, 0 failed
+100 modules, concurrent       : average tick ≈ 206 ms,  0 failed
 ```
 
 Bu bir **measured prototype benchmark'ıdır**, production garantisi değildir.
@@ -254,6 +256,8 @@ BOM ve 1600 kVA AG panel deployment konsepti dahil:
 | [docs/hardware-architecture.md](docs/hardware-architecture.md) | Donanım blok diyagramı |
 | [docs/electronic-design.md](docs/electronic-design.md) | Devre şeması, pin ve bileşen tablosu |
 | [docs/firmware-flow.md](docs/firmware-flow.md) | Firmware akış diyagramı |
+| [docs/field-conditions.md](docs/field-conditions.md) | Sıcaklık, manyetik alan ve çevre etkileri (tasarım yaklaşımı) |
+| [docs/installation-and-failure-analysis.md](docs/installation-and-failure-analysis.md) | Kurulum yaklaşımı ve arıza modları analizi (FMEA) |
 | [docs/notification-policy.md](docs/notification-policy.md) | Bildirim politikası ve SMS/WhatsApp gateway entegrasyonu |
 | [docs/field-installation.md](docs/field-installation.md) | Enclosure/kurulum konsepti |
 | [docs/panel-deployment-concept.md](docs/panel-deployment-concept.md) | 1600 kVA AG panel deployment konsepti |
@@ -407,7 +411,7 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 - Gerçek ADM/GDZ SCADA bağlantısı
 - Gerçek endüstriyel sensör/vendor seçimi ve saha doğrulaması (bkz. [docs/field-module.md](docs/field-module.md))
 - Field module'ün gerçek kartta ve gerçek sensörlerle denenmesi, sensör kalibrasyonu ve özel PCB yerleşimi (bkz. [docs/electronic-design.md](docs/electronic-design.md))
-- Alarm onaylama (acknowledge) uç noktası, bildirimde kanal yedeği ve yükseltme (escalation) kuralları
+- Bildirimde kanal yedeği ve yükseltme (escalation) kuralları (onaylanmayan alarm için üst kademeye otomatik bildirim)
 
 ## Dokümantasyon
 

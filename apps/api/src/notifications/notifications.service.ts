@@ -106,7 +106,7 @@ export class NotificationsService implements OnModuleDestroy {
 
   // Tum arka plan gonderimlerinin bitmesini bekler (kapanis ve testler icin).
   async drain(): Promise<void> {
-    await Promise.allSettled([...this.inFlight]);
+    await Promise.allSettled(this.inFlight);
   }
 
   async onModuleDestroy(): Promise<void> {

@@ -48,43 +48,49 @@ GRID UP ON-PREMISE
                         Existing SCADA
 ```
 
-## ÇOK ÖNEMLİ: bugünkü prototipte "Field Module = Simulator"
+## ÇOK ÖNEMLİ: bugünkü prototipte Field Module iki biçimde bulunur
 
 Yukarıdaki diyagramdaki **Sensors → Field Module → Local Gateway** bloğu,
-bugünkü çalışan prototipte tek bir yazılım bileşeniyle temsil edilir:
-**`apps/simulator`**.
+bugünkü çalışan prototipte iki yazılım bileşeniyle temsil edilir:
+**`apps/simulator`** (sentetik veri) ve **`firmware/`** (ESP32 firmware'i,
+Wokwi simülasyonunda çalışır).
 
 ```
-FIELD (bugünkü prototip)          FIELD (gerçek saha dağıtımı)
-─────────────────────────         ─────────────────────────────
-                                   Sensors
-                                      │
-  apps/simulator          ≈          ▼
-  (sentetik sensör verisi     Field Module
-   üretir, POST /readings/         │
-   batch ile GRID UP'a              ▼
-   gönderir)                  Local Gateway
+FIELD (bugünkü prototip)              FIELD (gerçek saha dağıtımı)
+────────────────────────────          ─────────────────────────────
+                                       Sensors
+                                          │
+  apps/simulator                          ▼
+  (sentetik sensör verisi     ≈      Field Module
+   üretir)                               │
+                                          ▼
+  firmware/ (ESP32, Wokwi'de)        Local Gateway
+  (sanal sensörleri okur)
+        │
+        └─ ikisi de POST /readings/batch ile GRID UP'a gönderir
 ```
 
 Bu denklik şu anlama gelir:
 
-- Simulator'ın konuştuğu API sözleşmesi (`POST /readings/batch`, bkz.
-  [field-data-contract.md](field-data-contract.md)) ile gerçek bir Field
-  Module'ün konuşacağı sözleşme **aynı olmalıdır/olacaktır**.
-- Simulator'dan sonraki **her şey** (Ingestion API, PostgreSQL, Risk Engine,
+- Simulator'ın ve firmware'in konuştuğu API sözleşmesi (`POST /readings/batch`,
+  bkz. [field-data-contract.md](field-data-contract.md)) ile gerçek bir Field
+  Module'ün konuşacağı sözleşme **aynıdır**. Firmware bunu Wokwi'de gerçek API'ye
+  karşı denemiştir.
+- Field Module'den sonraki **her şey** (Ingestion API, PostgreSQL, Risk Engine,
   Anomaly/Alarm, Dashboard, Notifications, SCADA Gateway) bugün gerçek,
   çalışan, test edilmiş kod olarak mevcuttur ve gerçek saha dağıtımında
   **değişmeden** kullanılabilir.
-- Field Module donanımı devreye girdiğinde, yapılması gereken tek şey veri
-  kaynağını simulator'dan Field Module'e çevirmektir — backend mimarisinde
-  bir yeniden tasarım gerekmez.
+- Gerçek Field Module donanımı devreye girdiğinde, yapılması gereken tek şey
+  veri kaynağını simulator'dan/Wokwi'den gerçek karta çevirmektir — backend
+  mimarisinde bir yeniden tasarım gerekmez. Firmware gerçek kartta ve gerçek
+  sensörlerle henüz denenmemiştir; sensör kalibrasyonu sahada yapılmalıdır.
 
 ## Katman sorumlulukları
 
 | Katman | Sorumluluk | Durum |
 | ------ | ---------- | ----- |
 | Sensors | Fiziksel ölçüm | Concept (bkz. [field-module.md](field-module.md)) |
-| Field Module | Sensör toplama + iletim | Concept; bugün `apps/simulator` ile temsil ediliyor |
+| Field Module | Sensör toplama + iletim | `apps/simulator` ve ESP32 firmware'i (`firmware/`, Wokwi'de çalışır); gerçek kartta denenmedi |
 | Local Gateway | Birden fazla Field Module'ü aggregate etme | Concept (bkz. [scalability.md](scalability.md)) |
 | Private Network | Saha ↔ on-premise bağlantısı | Bugünkü dev ortamında localhost; production'da ADM/GDZ private network (bkz. [on-premise-architecture.md](on-premise-architecture.md)) |
 | Ingestion API | `POST /readings`, `POST /readings/batch` | Implemented |
@@ -92,7 +98,7 @@ Bu denklik şu anlama gelir:
 | Risk Engine | 0-100 risk skoru, trend, korelasyon | Implemented |
 | Anomaly / Alarm | Anomali tespiti, alarm lifecycle | Implemented |
 | Dashboard | Overview / Panels / Panel Detail / Alarms | Implemented |
-| Notifications | SMS + WhatsApp (demo provider) | Implemented with demo provider |
+| Notifications | SMS + WhatsApp (demo provider ve HTTP gateway provider) | Implemented; gateway yalnızca emülatörle test edildi (bkz. [notification-policy.md](notification-policy.md)) |
 | SCADA Gateway | Modbus TCP (read-only) | Implemented prototype |
 
 Detaylı matris için bkz. [project-status.md](project-status.md).
