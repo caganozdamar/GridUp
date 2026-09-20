@@ -10,9 +10,11 @@ const NO_FLAGS: RiskFlags = {
   overcurrent: false,
   highHumidity: false,
   multiSensorRisk: false,
+  arcFlash: false,
+  partialDischarge: false,
 };
 
-const NO_COMPONENTS: RiskComponents = { temperature: 0, current: 0, humidity: 0, trend: 0 };
+const NO_COMPONENTS: RiskComponents = { temperature: 0, current: 0, humidity: 0, trend: 0, arcFlash: 0, acoustic: 0 };
 
 function input(overrides: Partial<RecommendedActionsInput>): RecommendedActionsInput {
   return { score: 0, components: NO_COMPONENTS, flags: NO_FLAGS, ...overrides };
@@ -58,19 +60,39 @@ describe('buildRecommendedActions', () => {
     const actions = buildRecommendedActions(
       input({
         score: 90,
-        components: { temperature: 90, current: 90, humidity: 90, trend: 90 },
+        components: { temperature: 90, current: 90, humidity: 90, trend: 90, arcFlash: 90, acoustic: 90 },
         flags: {
           highTemperature: true,
           temperatureRise: true,
           overcurrent: true,
           highHumidity: true,
           multiSensorRisk: true,
+          arcFlash: true,
+          partialDischarge: true,
         },
       }),
     );
-    expect(actions).toHaveLength(5);
+    expect(actions).toHaveLength(7);
     const sources = actions.map((action) => action.source);
     expect(new Set(sources).size).toBe(sources.length);
+  });
+
+  it('produces the correct inspection guidance for ARC_FLASH', () => {
+    const actions = buildRecommendedActions(
+      input({ components: { ...NO_COMPONENTS, arcFlash: 60 }, flags: { ...NO_FLAGS, arcFlash: true } }),
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0].source).toBe(AnomalyType.ARC_FLASH);
+    expect(actions[0].message).toBe(RECOMMENDED_ACTION_MESSAGES[AnomalyType.ARC_FLASH]);
+  });
+
+  it('produces the correct inspection guidance for PARTIAL_DISCHARGE', () => {
+    const actions = buildRecommendedActions(
+      input({ components: { ...NO_COMPONENTS, acoustic: 60 }, flags: { ...NO_FLAGS, partialDischarge: true } }),
+    );
+    expect(actions).toHaveLength(1);
+    expect(actions[0].source).toBe(AnomalyType.PARTIAL_DISCHARGE);
+    expect(actions[0].message).toBe(RECOMMENDED_ACTION_MESSAGES[AnomalyType.PARTIAL_DISCHARGE]);
   });
 
   it('returns an empty list when no conditions are active', () => {
@@ -80,7 +102,7 @@ describe('buildRecommendedActions', () => {
   it('sorts URGENT actions before PROMPT/ROUTINE', () => {
     const actions = buildRecommendedActions(
       input({
-        components: { temperature: 20, current: 90, humidity: 0, trend: 0 },
+        components: { ...NO_COMPONENTS, temperature: 20, current: 90 },
         flags: { ...NO_FLAGS, highTemperature: true, overcurrent: true },
       }),
     );
