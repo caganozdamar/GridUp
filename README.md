@@ -440,6 +440,8 @@ Aşağıdakiler, hackathon prototipinde implement **edilmemiştir**, production
 | [docs/architecture.md](docs/architecture.md) | Backend mimarisi (Aşama 1-7) |
 | [docs/on-premise-architecture.md](docs/on-premise-architecture.md) | On-prem Docker dağıtımı, production considerations |
 | [docs/modbus-register-map.md](docs/modbus-register-map.md) | SCADA/Modbus register haritası |
+| [docs/modbus-mapping-table.md](docs/modbus-mapping-table.md) | Modbus haritalama tablosu (MPR-53CS sütun düzeni) + CSV |
+| [docs/sensor-modbus-mapping.md](docs/sensor-modbus-mapping.md) | ABB TVOC-2, HFCT30/50 ve enerji analizörü Modbus eşlemesi |
 | [docs/final-architecture.md](docs/final-architecture.md) | Uçtan uca final mimari (field → SCADA) |
 | [docs/field-module.md](docs/field-module.md) | Field Module konsepti |
 | [docs/field-data-contract.md](docs/field-data-contract.md) | Field veri sözleşmesi |
