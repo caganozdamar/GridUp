@@ -30,7 +30,10 @@ export function AlarmsPage() {
   const [statusFilter, setStatusFilter] = useState<AlarmStatus | 'ALL'>('ALL');
   const [severityFilter, setSeverityFilter] = useState<Severity | 'ALL'>('ALL');
 
-  const { data: alarms, error, isLoading, isOnline, lastUpdated } = usePolling(
+  const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const { data: alarms, error, isLoading, isOnline, lastUpdated, refresh } = usePolling(
     () =>
       alarmsApi.list({
         status: statusFilter === 'ALL' ? undefined : statusFilter,
@@ -41,6 +44,19 @@ export function AlarmsPage() {
   );
 
   const { data: notifications } = usePolling(() => notificationsApi.list(), POLLING_INTERVALS.alarms, []);
+
+  const acknowledge = async (alarmId: string) => {
+    setAcknowledgingId(alarmId);
+    setActionError(null);
+    try {
+      await alarmsApi.acknowledge(alarmId);
+      await refresh();
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not acknowledge the alarm');
+    } finally {
+      setAcknowledgingId(null);
+    }
+  };
 
   const { report } = useSystemStatus();
   useEffect(() => {
@@ -98,7 +114,9 @@ export function AlarmsPage() {
 
           {error && <ErrorBanner message={`Showing last known data. Connection issue: ${error}`} />}
 
-          <AlarmsTable alarms={sorted} />
+          {actionError && <ErrorBanner message={`Could not acknowledge the alarm: ${actionError}`} />}
+
+          <AlarmsTable alarms={sorted} onAcknowledge={acknowledge} acknowledgingId={acknowledgingId} />
 
           <section className="panel-status-section">
             <div className="section-heading-row">

@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  checks:
+    name: Typecheck, lint, unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run build:shared
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run test
+
+  firmware:
+    name: Firmware core tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Platformdan bagimsiz C cekirdegi, sahte HAL ile PC'de test edilir.
+      # ESP32 derlemesi (ESP-IDF) burada calismaz.
+      - run: make test
+        working-directory: firmware
+
+  e2e:
+    name: API e2e tests (real Postgres)
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: grid_up
+          POSTGRES_PASSWORD: grid_up
+          POSTGRES_DB: grid_up
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grid_up"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://grid_up:grid_up@localhost:5432/grid_up?schema=public
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run prisma:generate
+      - run: npm run build:shared
+      - run: npx prisma migrate deploy
+        working-directory: apps/api
+      - run: npm run test:e2e
+        working-directory: apps/api

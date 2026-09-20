@@ -19,6 +19,9 @@ Final sunumdan hemen önce, sırasıyla kontrol edin.
 - [ ] Browser console temiz (F12 → Console'da kırmızı hata yok)
 - [ ] `npm run scada:read -- PANO-003` client'ı çalışıyor
 - [ ] Demo critical komutu hazır (`npm run demo:critical` — ayrı bir terminalde çalıştırmaya hazır, henüz çalıştırılmamış)
+- [ ] Firmware derlenmiş (`firmware/esp32/build/gridup-field-module.elf` var; yoksa `idf.py build`, bkz. [../firmware/esp32/README.md](../firmware/esp32/README.md))
+- [ ] Wokwi **kapalı** (demo:critical ile aynı panoya yazar; STEP 8'de açılacak)
+- [ ] İsteğe bağlı: bildirim gateway gösterimi için `npm run mock:sms` hazır (bkz. [notification-policy.md](notification-policy.md))
 - [ ] Sunum/tarayıcı zoom seviyesi kontrol edildi (okunabilir font boyutu)
 - [ ] Terminal pencereleri hazırlandı (API, Web, Simulator, SCADA Gateway — her biri ayrı, etiketli pencerede)
 
@@ -44,6 +47,17 @@ edin (aynı anda yalnızca bir gateway instance'ı çalıştırılmalı). Gereki
 `apps/scada-gateway/.env` içindeki `MODBUS_TCP_PORT`'u geçici olarak
 değiştirip gateway'i yeniden başlatın (ve `scada:read` client'ını da aynı
 porta yönlendirin).
+
+**Wokwi bağlanamıyorsa ne kontrol edilir?**
+API'nin `3000` portunda çalıştığını doğrulayın (`curl http://localhost:3000/panels`).
+Firmware sunucuya ulaşamazsa çökmez: en fazla 32 tick tamponlar ve her 5 tickte
+bir yeniden dener (seri konsolda `[module] not provisioned, buffering`). API
+ayağa kalkınca birikmiş veriyi gönderir.
+
+**Wokwi açıkken kart karışık değer gösteriyorsa ne kontrol edilir?**
+Aynı anda hem simülatör hem Wokwi PANO-003'e veri yazıyordur. Birini kapatın.
+Wokwi'de LDR'nin başlangıç değeri `lux: 30000` olmalıdır (arc ≈ %6, skor
+NORMAL); farklıysa `firmware/wokwi/diagram.json` dosyasını kontrol edin.
 
 **Dashboard eski data gösteriyorsa ne kontrol edilir?**
 Tarayıcı sekmesini yenileyin; API'nin ayakta olduğunu ve simulator'ın hâlâ

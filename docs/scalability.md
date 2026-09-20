@@ -8,38 +8,61 @@ karşılayabileceğini, hem **ölçülmüş bir yazılım benchmark'ı** hem de
 
 Aşağıdaki sayılar, `apps/api/scripts/scada-scale-test.mjs` script'i ile
 **gerçek, çalışan** bir API'ye (`npm run dev:api`) ve gerçek Postgres'e karşı,
-bu doküman yazılırken (2026-09-19) yeniden çalıştırılarak elde edilmiştir.
-Script; 100 geçici pano + 400 sensör oluşturur, `POST /readings/batch`'e 5
-tick boyunca gerçek istek gönderir (Risk Engine hesaplaması dahil), süreleri
-ölçer ve sonunda oluşturduğu her şeyi siler — mevcut 5 demo panosu
-(PANO-001..005) bu test sırasında ve sonrasında **değişmeden** kaldığı
-doğrulanmıştır.
+2026-09-20'de yeniden çalıştırılarak elde edilmiştir. Script; 100 geçici pano
+ve **pano başına 6 sensör (toplam 600)** oluşturur (ambient/kablo sıcaklığı,
+nem, akım, ark flaş, akustik; hepsi normal çalışma aralığında, alarm üretmez),
+`POST /readings/batch`'e 5 tick boyunca gerçek istek gönderir (Risk Engine
+hesaplaması dahil), süreleri ölçer ve sonunda oluşturduğu her şeyi siler. Test
+sonrası `SCALE-TEST-*` kaydı kalmadığı doğrulanmıştır.
+
+Test iki gönderim biçimini ölçer, çünkü API tek istekte en fazla 500 reading
+kabul eder ve bir tick artık 600 reading'dir:
+
+- **Mod A — gateway:** Tüm panoların okumaları 500'lük parçalarla (2 istek),
+  sırayla gönderilir. Birden fazla modülü aggregate eden bir local gateway'i
+  temsil eder.
+- **Mod B — modüller:** 100 modülün her biri kendi 6 reading'lik küçük
+  batch'ini gönderir, 100 istek aynı anda başlar. Firmware'in gerçek
+  davranışıdır ve en kötü durumdur: sahada modüllerin tick'leri senkron olmaz.
 
 ```
 ============================================================
 RESULTS (real measurements, POST /readings/batch, incl. risk analysis)
 ============================================================
-100 panels | 400 sensors | 400 readings/tick | 5 ticks
-Total readings sent   : 2000
-Total inserted        : 2000
-Failed ticks          : 0
-Average batch time    : 1006.9 ms
-Min / Max batch time  : 923.5 ms / 1052.4 ms
+100 panels | 600 sensors | 600 readings/tick | 5 ticks per mode
+Mode A (gateway, 500-reading chunks):
+  Requests/tick         : 2
+  Total readings sent   : 3000
+  Total inserted        : 3000
+  Failed ticks          : 0
+  Average tick time     : 1481.9 ms
+  Min / Max tick time   : 1270.8 ms / 1695.3 ms
+Mode B (100 modules, concurrent):
+  Requests/tick         : 100
+  Total readings sent   : 3000
+  Total inserted        : 3000
+  Failed ticks          : 0
+  Average tick time     : 206.2 ms
+  Min / Max tick time   : 182.1 ms / 243.7 ms
 ============================================================
 ```
 
+Her iki mod da varsayılan 2 saniyelik örnekleme aralığının (firmware
+`CONFIG_GRIDUP_SAMPLE_INTERVAL_MS`) altında tamamlanmıştır. Önceki ölçüm
+(4 sensör, tek 400'lük batch: ortalama 1006.9 ms) ile karşılaştırıldığında Mod A,
+reading sayısıyla yaklaşık doğrusal ölçeklenir.
+
 > **Bu bir production garantisi DEĞİLDİR.** Bu, tek bir geliştirme
 > makinesinde, tek bir çalıştırmada elde edilen bir **prototip
-> benchmark'ıdır**. Bu test aynı zamanda geliştirme ortamındaki NORMAL
-> senaryolu 5 demo panosunu besleyen canlı bir simulator'ın da çalıştığı
-> bir arka planda ölçülmüştür (yani izole olmayan, gerçekçi bir eşzamanlı
-> yük koşuludur) — ancak yine de tek makine/tek çalıştırma sonucudur.
-> Production'da gerçek 100+ panolu saha verisiyle, gerçek network
-> koşullarında sürekli yük testi yapılmalıdır.
+> benchmark'ıdır**. Ölçüm sırasında arka planda başka bir veri üreticisi
+> (simulator/Wokwi) çalışıp çalışmadığı kayıt altına alınmamıştır. Sahada
+> gerçek ağ gecikmesi, Wi-Fi kayıpları ve uzun süreli yük ayrıca ölçülmelidir.
+> Production'da gerçek 100+ panolu saha verisiyle sürekli yük testi
+> yapılmalıdır.
 
 ### Bilinen sınırlama: geçici bağlantı hatası
 
-Bu doküman için testi ilk çalıştırdığımızda, ilk tick'te bir `fetch failed`
+Bu doküman için testi ilk çalıştırdığımızda (2026-09-19, 4 sensörlü sürüm), ilk tick'te bir `fetch failed`
 / `ECONNRESET` hatası alındı; script `finally` bloğu sayesinde oluşturduğu
 fixture'ları yine de temizledi ve ikinci çalıştırmada test sorunsuz
 tamamlandı. Bu, geliştirme ortamında ara sıra görülebilen geçici bir
@@ -70,7 +93,7 @@ yaklaşımından kaçınılır (bkz. [field-module.md](field-module.md) "Field
 Communication Architecture"):
 
 - **Field Module:** Düşük maliyetli, mikrokontrolör sınıfı bir cihaz —
-  sadece kendi panosunun 4 sensöründen veri toplar ve iletir.
+  sadece kendi panosunun 6 sensöründen veri toplar ve iletir.
 - **Local Gateway:** Birden fazla Field Module'ü aggregate edebilen, saha
   içinde birkaç adet bulunması yeterli olan bir cihaz/bilgisayar.
 - **GRID UP On-Premise:** Bugünkü mevcut backend mimarisi — ölçek
@@ -86,9 +109,11 @@ Communication Architecture"):
   panoları `riskEngineService.analyzePanels(affectedPanelIds)` ile analiz
   eder.
 - **Batch limiti:** `POST /readings/batch` tek istekte en fazla 500 reading
-  kabul eder (`MAX_BATCH_SIZE`); 100 panel × 4 sensör = 400 reading/tick bu
-  sınırın altındadır. Daha büyük ölçeklerde (örn. 150+ panel) saha tarafının
-  isteklerini birden fazla batch'e bölmesi gerekir.
+  kabul eder (`MAX_BATCH_SIZE`). Bir modül tick başına 6 reading gönderir;
+  firmware'in 32 tick'lik tamponu en kötü durumda 192 reading'dir, yani sınırın
+  altındadır. Ancak 100 panelin okumalarını tek istekte toplayan bir gateway
+  100 × 6 = 600 reading üretir ve sınırı **aşar**: gateway 500'lük parçalara
+  bölmelidir (ölçek testinin Mod A'sı bunu yapar).
 - **İndeksli sorgular:** `SensorReading` tablosu zaman bazlı sorgular için
   indekslenmiştir (bkz. `apps/api/prisma/schema.prisma`); ileride time-series
   optimizasyonu (örn. partitioning) değerlendirilebilir (bkz.

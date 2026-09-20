@@ -37,6 +37,13 @@ Bu komut, PANO-003 üzerinde `COMBINED_FAILURE` senaryosunu başlatır (diğer
 tüm panolar NORMAL kalır). `apps/simulator/.env` dosyasını **değiştirmez**
 (bkz. `scripts/demo.mjs`).
 
+> **Uyarı:** Wokwi simülasyonu açıksa kapatın. Firmware da PANO-003'e veri
+> yazar; ikisi birden çalışırsa panonun "son değeri" iki kaynak arasında gidip
+> gelir ve kart karışık görünür. Wokwi'yi STEP 8'de, bu adımlardan sonra açın.
+
+İsteğe bağlı: ark flaşı göstermek için `npm run demo:arc` (yalnızca
+`ARC_FLASH`, diğer sensörler normal kalır, tek başına CRITICAL üretir).
+
 Dashboard'u refresh etmeden izleyin — sensör değerlerinin (özellikle cable
 temperature ve current) yükseldiğini gösterin.
 
@@ -90,6 +97,14 @@ Anlat:
 > "Demo provider is used during the hackathon; the provider interface can be
 > connected to the organization's approved messaging gateway."
 
+İsteğe bağlı, gerçek HTTP yolunu göstermek için (bkz.
+[notification-policy.md](notification-policy.md)): önce `MOCK_GATEWAY_FAIL_FIRST=2
+npm run mock:sms`, sonra API'yi `NOTIFICATION_PROVIDER=http
+NOTIFICATION_GATEWAY_URL=http://localhost:4010/send` ile başlatıp senaryoyu
+tekrar tetikleyin. Emülatör penceresinde gelen mesajı ve ilk iki isteğin bilerek
+503 ile reddedilip yeniden denendiğini gösterin. Bu, gerçek bir SMS/WhatsApp
+hesabıyla denenmemiştir; söylerken bunu belirtin.
+
 Panel Detail'e dönüp **Event Timeline**'ı gösterin (newest-first, compact
 enterprise log):
 
@@ -135,8 +150,9 @@ vurgulayın.
 100 panel test sonucunu gösterin (bkz. [scalability.md](scalability.md)):
 
 ```
-100 panels | 400 sensors | 2000 readings | 0 failed
-Average batch processing ≈ 1006.9 ms
+100 panels | 600 sensors | 3000 readings per mode | 0 failed
+Gateway (500-reading chunks): average tick ≈ 1482 ms
+100 modules, concurrent:      average tick ≈ 206 ms
 ```
 
 Anlat:
@@ -145,13 +161,27 @@ Anlat:
 
 ## STEP 8 — Physical Module
 
-Field Module blok diyagramını gösterin (bkz.
-[hardware-architecture.md](hardware-architecture.md)).
+Önce devre şemasını (`docs/assets/field-module-schematic.svg`, bkz.
+[electronic-design.md](electronic-design.md)) ve firmware akış diyagramını
+(bkz. [firmware-flow.md](firmware-flow.md)) gösterin. Sonra canlı gösterim:
+
+1. `npm run demo:normal` ile simülatörü baseline'a alın, API'nin çalıştığından
+   emin olun.
+2. `firmware/wokwi/` klasörünü VS Code'da Wokwi eklentisiyle açıp simülasyonu
+   başlatın. Seri konsolda `[module] provisioned 6 sensors` ve her tick'te
+   `[tick N] ... buffered=1` satırlarını gösterin.
+3. Wokwi'de potansiyometreyi (akım) ya da LDR'yi (ışığı azaltmak ark flaş
+   değerini yükseltir) kaydırın; dashboard'da PANO-003'ün değerlerinin ve
+   skorunun değiştiğini gösterin.
 
 Anlat:
 
-> "Real deployment replaces the simulator with a low-cost field module. The
-> central software architecture remains the same."
+> "The firmware runs on the same API contract as the simulator. In the field
+> a low-cost ESP32-class module replaces it, and the central software stays the
+> same. Here it runs in a simulator; it has not been tested on a real board."
+
+Dürüst çerçeve: firmware bugün yalnızca Wokwi'de çalıştırılmıştır, gerçek kart
+ve gerçek sensörle denenmemiştir.
 
 ## Demo sonrası
 
