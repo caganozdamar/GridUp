@@ -62,13 +62,40 @@ kalibrasyonudur; gerçek sensörde saha kalibrasyonu gerekir.
 | ----- | ------- | ------ |
 | Kablo sıcaklığı (NTC) | Wokwi NTC örneğindeki Steinhart-Hart formülü, β = 3950: `1 / (ln(1 / (4095 / adc - 1)) / 3950 + 1 / 298.15) - 273.15` | °C |
 | Akım (CT) | Doğrusal: `adc / 4095 * 250` | 0-250 A |
-| Ark flaş (LDR) | Doğrusal yüzde: `adc / 4095 * 100`. **Yönü (ışıkla artıyor mu) Wokwi'de doğrulanmalıdır** | 0-100 % |
-| Akustik | Doğrusal: `30 + adc / 4095 * 70` | 30-100 dB |
+| Ark flaş (LDR) | Doğrusal yüzde: `adc / 4095 * 100`. Wokwi'de **ışık azaldıkça artar** (karanlık = yüksek), aşağıdaki LDR notuna bakın | 0-100 % |
+| Akustik | 64 örneklik seride ortalamadan sapmanın RMS'i; `ACOUSTIC_IDLE_RMS` (350 sayım) altı 40 dB, tam ölçek 100 dB | 40-100 dB |
 | Ortam sıcaklığı / nem | DHT22 kütüphanesi (`DHTesp` veya eşdeğeri) | °C / % |
 
 Bu aralıklar backend eşikleriyle uyumludur: kablo 45 °C üstü yükselen risk,
 akım 110 A üstü, ark flaş 3 % üstü, akustik 45 dB üstü (bkz.
 `apps/api/src/risk-engine/risk-engine.config.ts`).
+
+### LDR (ark flaş) ölçümü
+
+Wokwi'de ölçülen ve `diagram.json`'a yansıyan davranış (lux değeri LDR
+parçasına tıklanarak değiştirilir):
+
+| lux | ark flaş |
+| --- | -------- |
+| 10 | %83.3 |
+| 20 | %75.5 |
+| 500 (Wokwi varsayılanı) | %24.4 |
+| 5000 ve üzeri | ≈ %6.1 (bu değerin altına inmiyor) |
+
+Varsayılan 500 lux %24.4 verdiği için normal çalışmada bile HIGH skor üretiyordu.
+`diagram.json` bu yüzden `lux: 30000` ile başlar (≈ %6.1, risk skoru ≈ 17,
+NORMAL). Gerçek bir sensör için bu eşleme sahada kalibre edilmelidir.
+
+### Akustik ölçüm
+
+Ses sensörü boşta ADC'nin yarı seviyesinde durup etrafında salınır, bu yüzden
+ortalama seviyeyi doğrusal dB'ye çevirmek sessizliği ≈65 dB gösteriyordu.
+Firmware artık her tick'te 64 örneklik bir seri alır ve ortalamadan sapmanın
+RMS'ini ölçer. Wokwi'de boştaki gürültü 185-285 sayım RMS ölçüldü;
+`ACOUSTIC_IDLE_RMS = 350` (`core/adc_convert.h`) bunun üstünde bir marjla
+seçildi ve sessizlik 40 dB okunur. Her tick'te ham değer
+`[sensors] acoustic rms=... counts` olarak seri konsola yazılır (yeniden
+kalibrasyon için).
 
 ## Demo için elle deneme
 
@@ -77,13 +104,15 @@ akım 110 A üstü, ark flaş 3 % üstü, akustik 45 dB üstü (bkz.
 | Potansiyometreyi ~%45'e (≈110 A) çekin | Normal sınırın üstü, risk artmaya başlar |
 | Potansiyometreyi ~%70'e (≈170 A) çekin | Kritik akım |
 | NTC sıcaklığını 75 °C üstüne çıkarın (Wokwi'de parçaya tıklayıp slider) | Kritik kablo sıcaklığı |
-| LDR ışığını aniden yüksek yapın | Ark flaş → skor doğrudan CRITICAL |
+| LDR ışığını aniden düşürün (lux ≈ 10-20) | Ark flaş ≈ %75-83 → skor doğrudan CRITICAL |
 | Ses sensörünü yükseltin | Kısmi deşarj göstergesi (tek başına en fazla HIGH) |
 
 ## Doğrulama
 
 `diagram.json`, `@wokwi/elements` paketindeki gerçek pin tanımlarına karşı
 otomatik kontrol edilmiştir: 11 parça, 25 bağlantı, bilinmeyen parça veya pin
-yok, hiçbir GPIO iki kez kullanılmıyor. **Wokwi editöründe görsel olarak
-açılıp çalıştırılmamıştır** (bu ortamda tarayıcı yok); parça yerleşimi
+yok, hiçbir GPIO iki kez kullanılmıyor. Diagram ayrıca Wokwi'de (VS Code
+eklentisi) çalıştırılmıştır: modül Wi-Fi'ye bağlanır, `host.wokwi.internal:3000`
+üzerinden yerel API'yi bulur, altı sensörü provizyon eder ve okumaları
+gönderir (PANO-003 için panel kartında skor 17 / NORMAL). Parça yerleşimi
 (`top`/`left`) yaklaşıktır ve editörde sürüklenerek düzeltilebilir.

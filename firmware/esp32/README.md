@@ -22,13 +22,15 @@ Pin bağlantıları ve devre için [../wokwi/README.md](../wokwi/README.md).
 | Derleme (ESP-IDF v5.5.5, esp32) | ✅ Uyarısız derlenir, 933 KB, uygulama bölümünde %39 boş |
 | Çekirdek mantığı (provizyon, tampon, 4xx/5xx, sunucu yokken açılış) | ✅ Sahte HAL'le birim testleri (`make test`, `../Makefile`) |
 | ADC → birim dönüşümleri | ✅ Birim testli (saf fonksiyonlar) |
-| **Karta/Wokwi'ye yüklenip çalıştırıldı** | ❌ **Hayır.** Bu ortamda Wokwi ve gerçek kart yok |
-| DHT22 sürücüsü zamanlaması | ❌ Doğrulanmadı (yalnızca Wokwi'de veya kartta denenebilir) |
-| Wokwi ADC ölçeği / LDR yönü | ❌ Doğrulanmadı ([../wokwi/README.md](../wokwi/README.md)) |
-| Wi-Fi + HTTP ile gerçek API'ye gönderim | ❌ Doğrulanmadı |
+| Wokwi'de çalıştırıldı | ✅ Boot, Wi-Fi, `host.wokwi.internal`, provizyon ve okuma gönderimi seri çıktıyla görüldü |
+| **Gerçek kartta çalıştırıldı** | ❌ **Hayır.** Elde gerçek kart yok |
+| DHT22 sürücüsü zamanlaması | ✅ Wokwi'de okunuyor (24.0 °C / %40); gerçek DHT22 kartta denenmedi |
+| Wokwi ADC ölçeği / LDR yönü / akustik | ✅ Ölçüldü ve kalibre edildi ([../wokwi/README.md](../wokwi/README.md)) |
+| Wi-Fi + HTTP ile yerel API'ye gönderim | ✅ Wokwi'den yerel API'ye okuma gidiyor |
 
-Yani kod derleniyor ve mantığı test edilmiş durumda; donanım/simülatör üzerinde
-ilk çalıştırma henüz yapılmadı. İlk denemede hata çıkması beklenebilir.
+Yani kod derleniyor, mantığı test edilmiş ve Wokwi simülasyonunda uçtan uca
+çalışıyor. Gerçek kartta ve gerçek sensörlerle denenmedi; sensör eşlemeleri
+(özellikle LDR ve ses) sahada yeniden kalibre edilmelidir.
 
 ## Kurulum
 

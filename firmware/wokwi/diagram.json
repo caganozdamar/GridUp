@@ -8,7 +8,7 @@
     { "type": "wokwi-dht22", "id": "dht", "top": -120, "left": -210, "attrs": {} },
     { "type": "wokwi-ntc-temperature-sensor", "id": "ntc", "top": 20, "left": -230, "attrs": {} },
     { "type": "wokwi-potentiometer", "id": "ct", "top": 150, "left": -240, "attrs": {} },
-    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": 290, "left": -250, "attrs": {} },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": 290, "left": -250, "attrs": { "lux": "30000" } },
     { "type": "wokwi-small-sound-sensor", "id": "mic", "top": 440, "left": -240, "attrs": {} },
 
     { "type": "wokwi-led", "id": "led_ok", "top": -80, "left": 230, "attrs": { "color": "green", "label": "STATUS" } },
